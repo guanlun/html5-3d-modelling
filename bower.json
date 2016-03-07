@@ -1,0 +1,21 @@
+{
+  "name": "html5-3d-modelling",
+  "homepage": "https://github.com/guanlun/html5-3d-modelling",
+  "authors": [
+    "guanlunzhao@gmail.com"
+  ],
+  "description": "",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^2.2.1"
+  }
+}
