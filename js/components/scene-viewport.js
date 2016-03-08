@@ -1,6 +1,6 @@
-define([
-    '../constants/constants'
-], function(Constants) {
+module.exports = (function() {
+    var Constants = require('../constants/constants');
+
     var SceneViewport = function() {
         var scene = new THREE.Scene();
         var camera = new THREE.PerspectiveCamera(75, Constants.VIEWPORT_WIDTH / Constants.VIEWPORT_HEIGHT, 0.1, 1000);
@@ -24,4 +24,4 @@ define([
     };
 
     return SceneViewport;
-});
+}());
