@@ -16,7 +16,9 @@ module.exports = (function() {
         this.box = new Box(1, 1, 1);
         this.scene.add(this.box.getMeshObj());
 
-        this.camera.position.z = 5;
+        this.camera.position.set(0, 0, 5);
+        this.camera.up = new THREE.Vector3(0, 1, 0);
+        this.camera.lookAt(0, 0, 0);
 
         this.render();
     };
@@ -46,6 +48,15 @@ module.exports = (function() {
 
     SceneViewport.prototype._mouseUpHandler = function(mouseEvent) {
         this._lastMousePosition = null;
+
+        var currMousePosition = {
+            x: mouseEvent.offsetX,
+            y: mouseEvent.offsetY
+        };
+
+        var gl = this.renderer.context;
+//        var colorDataAtMousePosition = gl.readPixels(currMousePosition.x, currMousePosition.y, 1, 1);
+//        console.log(colorDataAtMousePosition);
     };
 
     SceneViewport.prototype._mouseMoveHandler = function(mouseEvent) {
@@ -63,7 +74,8 @@ module.exports = (function() {
             y: currMousePosition.y - this._lastMousePosition.y
         };
 
-        this.camera.position.z += positionDiff.x / 100;
+        this.camera.position.x += positionDiff.x / 100;
+        this.camera.position.y += positionDiff.y / 100;
 
         this._lastMousePosition = currMousePosition;
     };
