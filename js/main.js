@@ -1,3 +1,4 @@
 var SceneViewport = require('./components/scene-viewport');
+var ObjectCreationPanel = require('./components/object-creation-panel');
 
-new SceneViewport();
+var sceneViewport = new SceneViewport();
