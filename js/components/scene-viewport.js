@@ -1,6 +1,7 @@
 module.exports = (function() {
     var Constants = require('../constants/constants');
     var Box = require('../scene/box');
+    var PointerGroup = require('../scene/pointer-group');
 
     var SceneViewport = function() {
         this.scene = new THREE.Scene();
@@ -14,11 +15,17 @@ module.exports = (function() {
         this.initEventHandlers();
 
         this.box = new Box(1, 1, 1);
-        this.scene.add(this.box.getMeshObj());
+        this.box.setPosition(1, 1, 1);
+        var boxMesh = this.box.getMeshObj();
+        this.scene.add(boxMesh);
 
         this.camera.position.set(0, 0, 5);
         this.camera.up = new THREE.Vector3(0, 1, 0);
         this.camera.lookAt(0, 0, 0);
+
+        this.pointerGroup = new PointerGroup();
+        this.pointerGroup.attachToObj(this.box);
+        this.scene.add(this.pointerGroup.getMeshObj());
 
         this.render();
     };
