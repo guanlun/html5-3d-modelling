@@ -7,6 +7,9 @@ module.exports = (function() {
         this.scene = new THREE.Scene();
 
         this.camera = new THREE.PerspectiveCamera(75, Constants.VIEWPORT_WIDTH / Constants.VIEWPORT_HEIGHT, 0.1, 1000);
+        this.camera.position.set(0, 0, 5);
+        this.camera.up = new THREE.Vector3(0, 1, 0);
+        this.camera.lookAt(0, 0, 0);
 
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.setSize(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
@@ -18,10 +21,6 @@ module.exports = (function() {
         this.box.setPosition(1, 1, 1);
         var boxMesh = this.box.getMeshObj();
         this.scene.add(boxMesh);
-
-        this.camera.position.set(0, 0, 5);
-        this.camera.up = new THREE.Vector3(0, 1, 0);
-        this.camera.lookAt(0, 0, 0);
 
         this.pointerGroup = new PointerGroup();
         this.pointerGroup.attachToObj(this.box);
@@ -67,6 +66,20 @@ module.exports = (function() {
     };
 
     SceneViewport.prototype._mouseMoveHandler = function(mouseEvent) {
+        // Testing code for mouse picking
+        var x = mouseEvent.clientX;
+        var y = mouseEvent.clientY;
+
+        var rayCaster = new THREE.Raycaster();
+        var mouseVector = new THREE.Vector2();
+
+        mouseVector.x = 2 * (x / Constants.VIEWPORT_WIDTH) - 1;
+        mouseVector.y = 1 - 2 * (y / Constants.VIEWPORT_HEIGHT);
+
+        rayCaster.setFromCamera( mouseVector, this.camera );
+        var intersects = rayCaster.intersectObjects( [this.box.getMeshObj()], true );
+        console.log(intersects);
+
         if (this._lastMousePosition === null) {
             return;
         }
