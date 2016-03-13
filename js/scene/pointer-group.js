@@ -20,12 +20,16 @@ module.exports = (function() {
         this._zPointer = new THREE.Mesh(this._zGeometry, this._zMaterial);
         this._zPointer.rotateZ(Math.PI / 2);
         this._group.add(this._zPointer);
+
+        this._group.visible = false;
     };
 
     PointerGroup.prototype.attachToObj = function(sceneObj) {
         this._attachedSceneObj = sceneObj;
         var pos = sceneObj.getPosition();
         this._group.position.set(pos.x, pos.y, pos.z);
+
+        this._group.visible = true;
     };
 
     PointerGroup.prototype.getMeshObj = function() {

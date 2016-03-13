@@ -7,7 +7,7 @@ module.exports = (function() {
         this.scene = new THREE.Scene();
 
         this.camera = new THREE.PerspectiveCamera(75, Constants.VIEWPORT_WIDTH / Constants.VIEWPORT_HEIGHT, 0.1, 1000);
-        this.camera.position.set(0, 0, 5);
+        this.camera.position.set(0, 0, 4);
         this.camera.up = new THREE.Vector3(0, 1, 0);
         this.camera.lookAt(0, 0, 0);
 
@@ -15,16 +15,10 @@ module.exports = (function() {
         this.renderer.setSize(Constants.VIEWPORT_WIDTH, Constants.VIEWPORT_HEIGHT);
         document.body.appendChild(this.renderer.domElement);
 
-        this.initEventHandlers();
-
-        this.box = new Box(1, 1, 1);
-        this.box.setPosition(1, 1, 1);
-        var boxMesh = this.box.getMeshObj();
-        this.scene.add(boxMesh);
-
         this.pointerGroup = new PointerGroup();
-        this.pointerGroup.attachToObj(this.box);
         this.scene.add(this.pointerGroup.getMeshObj());
+
+        this.initEventHandlers();
 
         this.render();
     };
@@ -40,10 +34,40 @@ module.exports = (function() {
         this._lastMousePosition = null;
 
         $(rendererDom)
+            .on('click', this._clickHandler.bind(this))
             .on('mousedown', this._mouseDownHandler.bind(this))
             .on('mouseup', this._mouseUpHandler.bind(this))
             .on('mousemove', this._mouseMoveHandler.bind(this));
     };
+
+    SceneViewport.prototype.addObject = function() {
+        this.box = new Box(1, 1, 1);
+        this.box.setPosition(1, 1, 1);
+        var boxMesh = this.box.getMeshObj();
+        this.scene.add(boxMesh);
+    };
+
+    SceneViewport.prototype._clickHandler = function(mouseEvent) {
+        // Testing code for mouse picking
+        var x = mouseEvent.offsetX;
+        var y = mouseEvent.offsetY;
+
+        var rayCaster = new THREE.Raycaster();
+        var mouseVector = new THREE.Vector2();
+
+        mouseVector.x = 2 * (x / Constants.VIEWPORT_WIDTH) - 1;
+        mouseVector.y = 1 - 2 * (y / Constants.VIEWPORT_HEIGHT);
+
+        rayCaster.setFromCamera( mouseVector, this.camera );
+
+        var intersects = rayCaster.intersectObjects(this.scene.children, true );
+        var firstIntersectedObj = intersects[0];
+
+        if (firstIntersectedObj) {
+            console.log(firstIntersectedObj.object);
+            this.pointerGroup.attachToObj(firstIntersectedObj.object.hObject);
+        }
+    }
 
     SceneViewport.prototype._mouseDownHandler = function(mouseEvent) {
         this._lastMousePosition = {
@@ -61,25 +85,9 @@ module.exports = (function() {
         };
 
         var gl = this.renderer.context;
-//        var colorDataAtMousePosition = gl.readPixels(currMousePosition.x, currMousePosition.y, 1, 1);
-//        console.log(colorDataAtMousePosition);
     };
 
     SceneViewport.prototype._mouseMoveHandler = function(mouseEvent) {
-        // Testing code for mouse picking
-        var x = mouseEvent.clientX;
-        var y = mouseEvent.clientY;
-
-        var rayCaster = new THREE.Raycaster();
-        var mouseVector = new THREE.Vector2();
-
-        mouseVector.x = 2 * (x / Constants.VIEWPORT_WIDTH) - 1;
-        mouseVector.y = 1 - 2 * (y / Constants.VIEWPORT_HEIGHT);
-
-        rayCaster.setFromCamera( mouseVector, this.camera );
-        var intersects = rayCaster.intersectObjects( [this.box.getMeshObj()], true );
-        console.log(intersects);
-
         if (this._lastMousePosition === null) {
             return;
         }

@@ -4,6 +4,9 @@ module.exports = (function() {
         this._material = new THREE.MeshBasicMaterial( { color: 0xffcc00 } );
 
         this._meshObj = new THREE.Mesh(this._geometry, this._material);
+
+        // Temporary solution, points to the parent Box object
+        this._meshObj.hObject = this;
     };
 
     Box.prototype.setPosition = function(x, y, z) {
