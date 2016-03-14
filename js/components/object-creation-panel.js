@@ -17,7 +17,5 @@ module.exports = (function() {
 
     ObjectCreationPanel.prototype = new EventEmitter();
 
-    var ocp = new ObjectCreationPanel();
-
     return ObjectCreationPanel;
 }());
