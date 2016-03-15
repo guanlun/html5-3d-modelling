@@ -1,8 +1,9 @@
 module.exports = (function() {
-    var Constants = require('../constants/constants');
-    var Box = require('../scene/box');
-    var PointerGroup = require('../scene/pointer-group');
-    var SceneManager = require('../managers/scene-manager');
+    var Constants = require('../constants/constants'),
+        EventType = Constants.EventType,
+        Box = require('../scene/box'),
+        PointerGroup = require('../scene/pointer-group'),
+        SceneManager = require('../managers/scene-manager');
 
     var SceneViewport = function() {
         this.scene = new THREE.Scene();
@@ -40,16 +41,11 @@ module.exports = (function() {
             .on('mouseup', this._mouseUpHandler.bind(this))
             .on('mousemove', this._mouseMoveHandler.bind(this));
 
-        SceneManager.addListener('OBJECT_ADDED', function() {
-            console.log('obj added');
-        })
-    };
+        SceneManager.addListener(EventType.OBJECT_ADDED, function(payload) {
+            var newObject = payload.object;
 
-    SceneViewport.prototype.addObject = function() {
-//        this.box = new Box(1, 1, 1);
-//        this.box.setPosition(1, 1, 1);
-//        var boxMesh = this.box.getMeshObj();
-//        this.scene.add(boxMesh);
+            this.scene.add(newObject.getMeshObj());
+        }.bind(this));
     };
 
     SceneViewport.prototype._clickHandler = function(mouseEvent) {
@@ -69,7 +65,6 @@ module.exports = (function() {
         var firstIntersectedObj = intersects[0];
 
         if (firstIntersectedObj) {
-            console.log(firstIntersectedObj.object);
             this.pointerGroup.attachToObj(firstIntersectedObj.object.hObject);
         }
     }

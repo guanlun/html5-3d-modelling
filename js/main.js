@@ -8,9 +8,3 @@ var sceneViewport = new SceneViewport();
 var objectCreationPanel = new ObjectCreationPanel();
 
 var objectListingPanel = new ObjectListingPanel();
-
-objectCreationPanel.addListener('addElement', function() {
-    sceneViewport.addObject();
-
-    objectListingPanel.addObject();
-});

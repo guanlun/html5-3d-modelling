@@ -3,7 +3,7 @@ module.exports = (function() {
         this._eventListenerMapping = {};
     };
 
-    EventEmitter.prototype.emit = function(eventName, data) {
+    EventEmitter.prototype.emit = function(eventName, payload) {
         var eventListeners = this._eventListenerMapping[eventName];
 
         if (!eventListeners) {
@@ -12,7 +12,7 @@ module.exports = (function() {
 
         for (var i = 0; i < eventListeners.length; i++) {
             var listener = eventListeners[i];
-            listener.apply();
+            listener.call(this, payload);
         }
     };
 

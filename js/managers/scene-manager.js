@@ -1,5 +1,7 @@
 module.exports = (function() {
-    var EventEmitter = require('../utils/event-emitter');
+    var Constants = require('../constants/constants'),
+        EventType = Constants.EventType,
+        EventEmitter = require('../utils/event-emitter');
 
     var SceneManager = function() {
         EventEmitter.apply(this);
@@ -12,7 +14,11 @@ module.exports = (function() {
     SceneManager.prototype.addObject = function(object) {
         this._sceneObjects.push(object);
 
-        this.emit('OBJECT_ADDED');
+        var payload = {
+            object: object
+        };
+
+        this.emit(EventType.OBJECT_ADDED, payload);
     };
 
     // We'll only be needing one instance to the scene manager
