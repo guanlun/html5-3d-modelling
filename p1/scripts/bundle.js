@@ -1,3 +1,156 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+const Force = require('./Force');
+
+module.exports = class AirFriction extends Force {
+    constructor() {
+        super();
+
+        this._frictionCoefficient = 1;
+    }
+
+    apply(collider) {
+        const v = collider.getVelocity();
+        const m = collider.getMass();
+
+        const force = new THREE.Vector3(
+            -v.x * this._frictionCoefficient / m,
+            -v.y * this._frictionCoefficient / m,
+            -v.z * this._frictionCoefficient / m
+        );
+
+        collider.getAcceleration().add(force);
+    }
+}
+
+},{"./Force":3}],2:[function(require,module,exports){
+module.exports = class Collider {
+    constructor() {
+        this._mass = 10;
+
+        this._position = new THREE.Vector3(0, 0, 0);
+        this._velocity = new THREE.Vector3(0, 0, 0);
+        this._acceleration = new THREE.Vector3(0, 0, 0);
+
+        this._lastVelocity = new THREE.Vector3(0, 0, 0);
+        this._lastPosition = new THREE.Vector3(0, 0, 0);
+
+        this._forces = [];
+    }
+
+    getMass() {
+        return this._mass;
+    }
+
+    getPosition() {
+        return this._position;
+    }
+
+    getVelocity() {
+        return this._velocity;
+    }
+
+    getAcceleration() {
+        return this._acceleration;
+    }
+
+    _restore() {
+        this._position.set(this._lastPosition.x, this._lastPosition.y, this._lastPosition.z);
+        this._velocity.set(this._lastVelocity.x, this._lastVelocity.y, this._lastVelocity.z);
+    }
+
+    _updateLastState() {
+        this._lastPosition.set(this._position.x, this._position.y, this._position.z);
+        this._lastVelocity.set(this._velocity.x, this._velocity.y, this._velocity.z);
+    }
+
+    simulate(deltaT) {
+        const PLANE_Y = -4;
+
+        let timeRemaining = deltaT;
+        let timeSimulated = deltaT;
+
+        while (timeRemaining > 0) {
+            this._calculateAcceleration();
+            this._updateState(timeRemaining);
+
+            if (this._collisionOccurred()) {
+                const d0 = this._lastPosition.y - PLANE_Y;
+                const d1 = this._lastPosition.y - this._position.y;
+
+                timeSimulated = (d0 / d1) * deltaT;
+
+                this._restore();
+
+                this._updateState(timeSimulated);
+
+                this._respondToCollision();
+            }
+
+            timeRemaining -= timeSimulated;
+        }
+
+        this._updateLastState();
+    }
+
+    _calculateAcceleration() {
+        this._acceleration.set(0, 0, 0);
+
+        this._forces.forEach(f => f.apply(this));
+    }
+
+    _updateState(deltaT) {
+        const a = this._acceleration;
+        this._velocity.add(new THREE.Vector3(a.x * deltaT, a.y * deltaT, a.z * deltaT));
+
+        const v = this._velocity;
+        this._position.add(new THREE.Vector3(v.x * deltaT, v.y * deltaT, v.z * deltaT));
+    }
+
+    _collisionOccurred() {
+        const PLANE_Y = -4;
+        return (this._lastPosition.y > PLANE_Y && this._position.y < PLANE_Y);
+    }
+
+    _respondToCollision() {
+        this._velocity.y = -0.8 * this._velocity.y;
+    }
+
+    addForce(force) {
+        this._forces.push(force);
+    }
+}
+
+},{}],3:[function(require,module,exports){
+module.exports = class Force {
+    constructor() {
+        this._value = null;
+    }
+
+    getValue() {
+        return this._value;
+    }
+
+    apply(collider) {
+        throw new Error('function `apply` is not implemented');
+    }
+}
+
+},{}],4:[function(require,module,exports){
+const Force = require('./Force');
+
+module.exports = class Gravity extends Force {
+    constructor() {
+        super();
+
+        this._value = new THREE.Vector3(0, -10, 0);
+    }
+
+    apply(collider) {
+        collider.getAcceleration().add(this._value);
+    }
+}
+
+},{"./Force":3}],5:[function(require,module,exports){
 const Force = require('./Force');
 const Gravity = require('./Gravity');
 const AirFriction = require('./AirFriction');
@@ -181,3 +334,5 @@ function render() {
     renderer.render(scene, camera);
 }
 render();
+
+},{"./AirFriction":1,"./Collider":2,"./Force":3,"./Gravity":4}]},{},[5]);
