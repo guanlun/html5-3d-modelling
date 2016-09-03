@@ -2,41 +2,8 @@ const Force = require('./Force');
 const Gravity = require('./Gravity');
 const AirFriction = require('./AirFriction');
 const Collider = require('./Collider');
-
-class SphereCollider extends Collider {
-    constructor() {
-        super();
-    }
-}
-
-class SceneObject {
-    constructor(pos) {
-        this._pos = pos;
-
-        this._graphicsObject = null;
-        this._collider = null;
-    }
-
-    simulate(deltaT) {
-        this._collider.simulate(deltaT);
-
-        const pos = this._collider.getPosition();
-
-        this._graphicsObject.position.set(pos.x, pos.y, pos.z);
-    }
-
-    getGraphicsObject() {
-        return this._graphicsObject;
-    }
-
-    setCollider(collider) {
-        this._collider = collider;
-    }
-
-    getCollider() {
-        return this._collider;
-    }
-}
+const Simulator = require('./Simulator');
+const SceneObject = require('./SceneObject');
 
 class SphereObject extends SceneObject {
     constructor(pos) {
@@ -57,6 +24,8 @@ const scene = new THREE.Scene();
 const sceneObjects = [];
 
 let camera;
+
+const simulator = new Simulator();
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(800, 500);
@@ -132,18 +101,16 @@ function initCamera() {
 
 function initObjects() {
     const ball = new SphereObject();
-    const ballCollider = new SphereCollider();
-    ballCollider.addForce(new Gravity());
-    // ballCollider.addForce(new AirFriction());
-    ball.setCollider(ballCollider);
+    ball.addForce(new Gravity());
+    simulator.addObject(ball);
 
     scene.add(ball.getGraphicsObject());
     sceneObjects.push(ball);
 
-    const ball2 = new SphereObject();
-    const ballCollider2 = new SphereCollider();
-    ballCollider2.addForce(new Gravity());
-    ball2.setCollider(ballCollider2);
+    const ball2 = new SphereObject(new THREE.Vector3(1, 2, 3));
+    ball2.setInitialVelocity(new THREE.Vector3(3, 0, 0));
+    ball2.addForce(new Gravity());
+    simulator.addObject(ball2);
 
     scene.add(ball2.getGraphicsObject());
     sceneObjects.push(ball2);
@@ -175,7 +142,9 @@ initObjects();
 initLight();
 
 function render() {
-    sceneObjects.forEach(so => so.simulate(0.01));
+    simulator.simulate(0.01);
+
+    sceneObjects.forEach(so => so.updateGraphics());
 
     requestAnimationFrame(render);
     renderer.render(scene, camera);

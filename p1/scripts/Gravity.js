@@ -7,7 +7,7 @@ module.exports = class Gravity extends Force {
         this._value = new THREE.Vector3(0, -10, 0);
     }
 
-    apply(collider) {
-        collider.getAcceleration().add(this._value);
+    apply(object) {
+        object.acc.add(this._value);
     }
 }
