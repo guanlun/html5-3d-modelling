@@ -86,7 +86,7 @@ class Collider {
     }
 
     simulate(deltaT) {
-        const PLANE_Y = -5;
+        const PLANE_Y = -4;
 
         let timeRemaining = deltaT;
         let timeSimulated = deltaT;
@@ -129,7 +129,7 @@ class Collider {
     }
 
     _collisionOccurred() {
-        const PLANE_Y = -5;
+        const PLANE_Y = -4;
         return (this._lastPosition.y > PLANE_Y && this._position.y < PLANE_Y);
     }
 
@@ -277,8 +277,15 @@ function initObjects() {
     ball.setCollider(ballCollider);
 
     scene.add(ball.getGraphicsObject());
-
     sceneObjects.push(ball);
+
+    const ball2 = new SphereObject();
+    const ballCollider2 = new SphereCollider();
+    ballCollider2.addForce(new Gravity());
+    ball2.setCollider(ballCollider2);
+
+    scene.add(ball2.getGraphicsObject());
+    sceneObjects.push(ball2);
 
     const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
     const boxMaterial = new THREE.MeshPhongMaterial({
