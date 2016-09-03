@@ -2,13 +2,15 @@ module.exports = class SceneObject {
     constructor(pos) {
         this._graphicsObject = null;
 
+        this.radius = 1;
+
         this.pos = pos || new THREE.Vector3(0, 0, 0);
         this.vel = new THREE.Vector3(0, 0, 0);
         this.acc = new THREE.Vector3(0, 0, 0);
 
         this._forces = [];
 
-        this._lastState = null;
+        this.lastState = null;
     }
 
     setInitialVelocity(vel) {
@@ -41,5 +43,12 @@ module.exports = class SceneObject {
 
     restoreLastState() {
 
+    }
+
+    updateLastState() {
+        this.lastState = {
+            pos: new THREE.Vector3(this.pos.x, this.pos.y, this.pos.z),
+            vel: new THREE.Vector3(this.vel.x, this.vel.y, this.vel.z),
+        };
     }
 }
