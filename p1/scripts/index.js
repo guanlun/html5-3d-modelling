@@ -27,7 +27,9 @@ let camera;
 
 const simulator = new Simulator();
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+});
 renderer.setSize(800, 500);
 renderer.setClearColor(0xffffff, 1);
 document.body.appendChild(renderer.domElement);
@@ -107,13 +109,21 @@ function initObjects() {
     scene.add(ball.getGraphicsObject());
     sceneObjects.push(ball);
 
-    const ball2 = new SphereObject(new THREE.Vector3(1, 2, 3));
+    const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0));
     ball2.setInitialVelocity(new THREE.Vector3(3, 0, 0));
     ball2.addForce(new Gravity());
     simulator.addObject(ball2);
 
     scene.add(ball2.getGraphicsObject());
     sceneObjects.push(ball2);
+
+    const ball3 = new SphereObject(new THREE.Vector3(-4, 6, 0));
+    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 0));
+    ball3.addForce(new Gravity());
+    simulator.addObject(ball3);
+
+    scene.add(ball3.getGraphicsObject());
+    sceneObjects.push(ball3);
 
     const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
     const boxMaterial = new THREE.MeshPhongMaterial({

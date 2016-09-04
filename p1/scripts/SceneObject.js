@@ -36,13 +36,19 @@ module.exports = class SceneObject {
         this.pos.add(new THREE.Vector3(this.vel.x * deltaT, this.vel.y * deltaT, this.vel.z * deltaT));
     }
 
+    respondToCollision() {
+        this.vel.y = -0.8 * this.vel.y;
+    }
+
     updateGraphics() {
-        // console.log(this._graphicsObject);
         this._graphicsObject.position.set(this.pos.x, this.pos.y, this.pos.z);
     }
 
     restoreLastState() {
-
+        const lastPos = this.lastState.pos;
+        const lastVel = this.lastState.vel;
+        this.pos.set(lastPos.x, lastPos.y, lastPos.z);
+        this.vel.set(lastVel.x, lastVel.y, lastVel.z);
     }
 
     updateLastState() {
