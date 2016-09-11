@@ -36,8 +36,19 @@ module.exports = class SceneObject {
         this.pos.add(new THREE.Vector3(this.vel.x * deltaT, this.vel.y * deltaT, this.vel.z * deltaT));
     }
 
-    respondToCollision() {
-        this.vel.y = -0.8 * this.vel.y;
+    respondToCollision(collision) {
+        const {
+            point,
+            normal,
+        } = collision;
+
+        if (normal.y == 1) {
+            this.vel.y = -0.8 * this.vel.y;
+        } else if (normal.x == -1) {
+            this.vel.x = -0.8 * this.vel.x;
+        }
+
+        //console.log(this.vel);
     }
 
     updateGraphics() {

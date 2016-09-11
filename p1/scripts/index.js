@@ -4,6 +4,9 @@ const AirFriction = require('./AirFriction');
 const Collider = require('./Collider');
 const Simulator = require('./Simulator');
 const SceneObject = require('./SceneObject');
+const StaticPlane = require('./StaticPlane');
+
+const UIControls = require('./UIControls');
 
 class SphereObject extends SceneObject {
     constructor(pos) {
@@ -102,28 +105,31 @@ function initCamera() {
 }
 
 function initObjects() {
-    const ball = new SphereObject();
-    ball.addForce(new Gravity());
-    simulator.addObject(ball);
+    // const ball = new SphereObject();
+    // ball.addForce(new Gravity());
+    // simulator.addObject(ball);
+    //
+    // scene.add(ball.getGraphicsObject());
+    // sceneObjects.push(ball);
+    //
+    // const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0));
+    // ball2.setInitialVelocity(new THREE.Vector3(3, 0, 0));
+    // ball2.addForce(new Gravity());
+    // simulator.addObject(ball2);
+    //
+    // scene.add(ball2.getGraphicsObject());
+    // sceneObjects.push(ball2);
 
-    scene.add(ball.getGraphicsObject());
-    sceneObjects.push(ball);
-
-    const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0));
-    ball2.setInitialVelocity(new THREE.Vector3(3, 0, 0));
-    ball2.addForce(new Gravity());
-    simulator.addObject(ball2);
-
-    scene.add(ball2.getGraphicsObject());
-    sceneObjects.push(ball2);
-
-    const ball3 = new SphereObject(new THREE.Vector3(-4, 6, 0));
-    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 0));
+    const ball3 = new SphereObject(new THREE.Vector3(-4, 2, 0));
+    ball3.setInitialVelocity(new THREE.Vector3(5, 0, 0));
     ball3.addForce(new Gravity());
     simulator.addObject(ball3);
 
     scene.add(ball3.getGraphicsObject());
     sceneObjects.push(ball3);
+
+    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 1, 0)));
+    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(5, 0, 0), new THREE.Vector3(-1, 0, 0)));
 
     const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
     const boxMaterial = new THREE.MeshPhongMaterial({
@@ -160,3 +166,9 @@ function render() {
     renderer.render(scene, camera);
 }
 render();
+
+const controls = new UIControls();
+
+controls.addListener('step-size-changed', event => {
+    console.log(event, 'hahahahahahahahahahahahaha');
+});

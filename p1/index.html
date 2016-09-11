@@ -2,12 +2,27 @@
 <html>
 <head>
     <title>Bouncing Ball Simulation</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
     <style>
 		body { margin: 0; }
 		canvas { width: 100%; height: 100% }
+        #ui-controls {
+            padding: 30px;
+        }
 	</style>
 </head>
 <body>
+    <div class="col-md-6 pull-right" id="ui-controls">
+        <div class="row">
+            <div class="col-md-4">
+                Step size
+            </div>
+            <div class="col-md-8">
+                <input id="step-size-slider" type="range" />
+            </div>
+        </div>
+
+    </div>
     <script src="scripts/three.js-master/build/three.js"></script>
 	<script src="scripts/bundle.js"></script>
 </body>
