@@ -120,8 +120,8 @@ function initObjects() {
     // scene.add(ball2.getGraphicsObject());
     // sceneObjects.push(ball2);
 
-    const ball3 = new SphereObject(new THREE.Vector3(-4, 2, 0));
-    ball3.setInitialVelocity(new THREE.Vector3(5, 0, 3));
+    const ball3 = new SphereObject(new THREE.Vector3(-4, 4, -4));
+    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3));
     ball3.addForce(new Gravity());
     simulator.addObject(ball3);
 
@@ -135,17 +135,34 @@ function initObjects() {
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, -5), new THREE.Vector3(0, 0, 1)));
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, 5), new THREE.Vector3(0, 0, -1)));
 
-    const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
-    const boxMaterial = new THREE.MeshPhongMaterial({
+    const planeMaterial = new THREE.MeshPhongMaterial({
         color: 0x6666ff,
         specular: 0x000099,
-        shininess: 10,
         transparent: true,
-        opacity: 0.6,
-        shading: THREE.FlatShading,
+        opacity: 0.3,
+        side: THREE.DoubleSide,
     });
-    const box = new THREE.Mesh(boxGeometry, boxMaterial);
-    scene.add(box);
+
+    const planeGeometry = new THREE.PlaneGeometry(10, 10);
+    const plane1 = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane1.position.set(0, 0, 5);
+    scene.add(plane1);
+
+    const plane2 = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane2.position.set(0, 0, -5);
+    scene.add(plane2);
+
+    const plane3 = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane3.position.set(-5, 0, 0);
+    plane3.rotation.y = -Math.PI / 2;
+    scene.add(plane3);
+
+    const plane4 = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane4.position.set(5, 0, 0);
+    plane4.rotation.y = -Math.PI / 2;
+    scene.add(plane4);
+
+    // Don't render top and bottom
 }
 
 function initLight() {
