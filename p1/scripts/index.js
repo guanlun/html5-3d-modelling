@@ -1,7 +1,6 @@
 const Force = require('./Force');
 const Gravity = require('./Gravity');
 const AirFriction = require('./AirFriction');
-const Collider = require('./Collider');
 const Simulator = require('./Simulator');
 const SceneObject = require('./SceneObject');
 const StaticPlane = require('./StaticPlane');
@@ -33,7 +32,7 @@ const simulator = new Simulator();
 const renderer = new THREE.WebGLRenderer({
     antialias: true,
 });
-renderer.setSize(800, 500);
+renderer.setSize(768, 500);
 renderer.setClearColor(0xffffff, 1);
 document.body.appendChild(renderer.domElement);
 
@@ -107,7 +106,7 @@ renderer.domElement.onmouseup = (evt) => {
 function initCamera() {
     camera = new THREE.PerspectiveCamera(
         75,
-        800 / 500,
+        768 / 500,
         0.1,
         1000
     );
@@ -117,28 +116,28 @@ function initCamera() {
 }
 
 function initObjects() {
-    // const ball = new SphereObject();
-    // ball.addForce(new Gravity());
-    // simulator.addObject(ball);
-    //
-    // scene.add(ball.getGraphicsObject());
-    // sceneObjects.push(ball);
-    //
-    // const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0));
-    // ball2.setInitialVelocity(new THREE.Vector3(3, 0, 0));
-    // ball2.addForce(new Gravity());
-    // simulator.addObject(ball2);
-    //
-    // scene.add(ball2.getGraphicsObject());
-    // sceneObjects.push(ball2);
+    const ball = new SphereObject();
+    ball.addForce(new Gravity());
+    simulator.addObject(ball);
 
-    const ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1));
-    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3.01));
-    ball3.addForce(new Gravity());
-    simulator.addObject(ball3);
+    scene.add(ball.getGraphicsObject());
+    sceneObjects.push(ball);
 
-    scene.add(ball3.getGraphicsObject());
-    sceneObjects.push(ball3);
+    const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0));
+    ball2.setInitialVelocity(new THREE.Vector3(2, 0, 0));
+    ball2.addForce(new Gravity());
+    simulator.addObject(ball2);
+
+    scene.add(ball2.getGraphicsObject());
+    sceneObjects.push(ball2);
+
+    // const ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1));
+    // ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3.01));
+    // ball3.addForce(new Gravity());
+    // simulator.addObject(ball3);
+    //
+    // scene.add(ball3.getGraphicsObject());
+    // sceneObjects.push(ball3);
 
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 1, 0)));
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0)));
@@ -190,7 +189,7 @@ initCamera();
 initObjects();
 initLight();
 
-let simulationStepSize = 0.05;
+let simulationStepSize = 0.01;
 
 const SIM_MULTIPLIER = 0.01;
 
@@ -221,4 +220,12 @@ const controls = new UIControls();
 controls.addListener('step-size-changed', val => {
     simulationStepSize = val;
     computeStepPerSample();
+});
+
+controls.addListener('elasticity-changed', val => {
+    simulator.elasticity = val;
+});
+
+controls.addListener('friction-coeff-changed', val => {
+    simulator.frictionCoeff = val;
 });

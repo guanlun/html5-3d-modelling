@@ -4,6 +4,9 @@ module.exports = class Simulator {
     constructor() {
         this._objects = [];
         this._staticPlanes = [];
+
+        this.elasticity = 0.5;
+        this.frictionCoeff = 0.5;
     }
 
     addObject(object) {
@@ -35,13 +38,13 @@ module.exports = class Simulator {
 
                 const normalVel = obj.vel.clone().multiplyScalar(obj.vel.dot(normal));
 
-                if (normalVel.y > 1e-3) {
+                if (normalVel.y > 0.05) {
                     return;
                 }
 
                 const planeDist = obj.pos.y - obj.radius - (-5);
 
-                if (planeDist > 1e-3) {
+                if (planeDist > 0.05) {
                     return;
                 }
 
@@ -66,21 +69,7 @@ module.exports = class Simulator {
                     const obj = col.object;
                     obj.collisionNormal = col.normal;
 
-                    // let collisionTime;
-                    //
-                    // if (col.withPlane) {
-                    //     collisionTime = (d0 / (d0 - d1)) * deltaT;
-                    // } else if (col.withObject) {
-                    //     const obj2 = col.withObject;
-                    //
-                    //     // TODO: move this somewhere else
-                    //     const collisionDistance = obj.radius + obj2.radius;
-                    //
-                    //     const lastPos = obj.lastState.pos;
-                    //     collisionTime = ((col.lastDist - collisionDistance) / (col.lastDist - col.dist)) * deltaT;
-                    // }
-
-                    const collisionTime = col.fraction * deltaT
+                    const collisionTime = col.fraction * deltaT;
 
                     if (collisionTime < earliestCollisionTime) {
                         // Get the earliest collision in this timestep
@@ -96,8 +85,11 @@ module.exports = class Simulator {
                     obj.integrate(timeSimulated);
 
                     if (earliestCollision) {
-                        if (earliestCollision.withPlane) {
-                            obj.respondToCollision(earliestCollision);
+                        if (
+                            obj === earliestCollision.object ||
+                            obj === earliestCollision.withObject
+                        ) {
+                            obj.respondToCollision(earliestCollision, this.elasticity, this.frictionCoeff);
                         }
                     }
                 });
@@ -134,13 +126,18 @@ module.exports = class Simulator {
 
                 const collisionDistance = obj.radius + obj2.radius;
 
+                const collisionNormal = obj2.pos.clone().sub(obj.pos).normalize();
+
+                const lastPos = obj.lastState.pos;
+                const collisionFraction = ((lastObjDist - collisionDistance) / (lastObjDist - objDist));
+
                 if (lastObjDist >= collisionDistance && objDist < collisionDistance) {
                     collisions.push({
                         withPlane: false,
                         object: obj,
                         withObject: obj2,
-                        dist: objDist,
-                        lastDist: lastObjDist,
+                        normal: collisionNormal,
+                        fraction: collisionFraction,
                     });
                 }
             }

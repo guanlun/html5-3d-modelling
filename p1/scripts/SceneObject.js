@@ -41,7 +41,7 @@ module.exports = class SceneObject {
         this.pos.add(new THREE.Vector3(this.vel.x * deltaT, this.vel.y * deltaT, this.vel.z * deltaT));
     }
 
-    respondToCollision(collision) {
+    respondToCollision(collision, elasticity, frictionCoeff) {
         const {
             point,
             normal,
@@ -50,8 +50,8 @@ module.exports = class SceneObject {
         const normalVel = normal.clone().multiplyScalar(this.vel.dot(normal));
         const tangentialVel = this.vel.clone().sub(normalVel);
 
-        normalVel.multiplyScalar(-0.8);
-        tangentialVel.multiplyScalar(0.8);
+        normalVel.multiplyScalar(-elasticity);
+        tangentialVel.multiplyScalar(1 - frictionCoeff);
 
         this.vel.set(normalVel.x + tangentialVel.x, normalVel.y + tangentialVel.y, normalVel.z + tangentialVel.z);
     }

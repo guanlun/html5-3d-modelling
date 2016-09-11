@@ -9,6 +9,10 @@
         #ui-controls {
             padding: 30px;
         }
+
+        #ui-controls .row {
+            padding-bottom: 20px;
+        }
 	</style>
 </head>
 <body>
@@ -23,6 +27,25 @@
             <div class="col-md-1 val-display">0.01</div>
         </div>
 
+        <div id="elasticity-slider" class="row">
+            <div class="col-md-3">
+                Elasticity
+            </div>
+            <div class="col-md-8">
+                <input type="range" min="0" max="1" step="0.1" value="0.5" />
+            </div>
+            <div class="col-md-1 val-display">0.5</div>
+        </div>
+
+        <div id="friction-coeff-slider" class="row">
+            <div class="col-md-3">
+                Friction Coefficient
+            </div>
+            <div class="col-md-8">
+                <input type="range" min="0" max="1" step="0.1" value="0.5" />
+            </div>
+            <div class="col-md-1 val-display">0.5</div>
+        </div>
     </div>
     <script src="scripts/jquery/jquery-3.1.0.min.js"></script>
     <script src="scripts/three.js-master/build/three.js"></script>
