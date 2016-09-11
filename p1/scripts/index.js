@@ -46,6 +46,18 @@ const cameraPos = {
     z: 15,
 };
 
+renderer.domElement.onwheel = (evt) => {
+    evt.preventDefault(0);
+    const multiplier = 1 + evt.deltaY * 0.0005;
+
+    cameraPos.x *= multiplier;
+    cameraPos.z *= multiplier;
+    cameraPos.y *= multiplier;
+
+    camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+}
+
 renderer.domElement.onmousedown = (evt) => {
     dragging = true;
 
@@ -120,8 +132,8 @@ function initObjects() {
     // scene.add(ball2.getGraphicsObject());
     // sceneObjects.push(ball2);
 
-    const ball3 = new SphereObject(new THREE.Vector3(-4, 4, -4));
-    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3));
+    const ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1));
+    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3.01));
     ball3.addForce(new Gravity());
     simulator.addObject(ball3);
 
@@ -178,18 +190,35 @@ initCamera();
 initObjects();
 initLight();
 
-function render() {
-    simulator.simulate(0.01);
+let simulationStepSize = 0.05;
+
+const SIM_MULTIPLIER = 0.01;
+
+let stepsPerSample;
+computeStepPerSample();
+let stepCount = 0;
+
+function simulate() {
+    if (stepCount % stepsPerSample === 0) {
+        simulator.simulate(simulationStepSize);
+    }
 
     sceneObjects.forEach(so => so.updateGraphics());
 
-    requestAnimationFrame(render);
     renderer.render(scene, camera);
+
+    stepCount++;
+    requestAnimationFrame(simulate);
 }
-render();
+simulate();
+
+function computeStepPerSample() {
+    stepsPerSample = Math.floor(simulationStepSize / SIM_MULTIPLIER);
+}
 
 const controls = new UIControls();
 
-controls.addListener('step-size-changed', event => {
-    console.log(event, 'hahahahahahahahahahahahaha');
+controls.addListener('step-size-changed', val => {
+    simulationStepSize = val;
+    computeStepPerSample();
 });

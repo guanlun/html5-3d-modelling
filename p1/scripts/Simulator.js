@@ -20,12 +20,38 @@ module.exports = class Simulator {
 
         this._objects.forEach(obj => {
             obj.calculateAcceleration();
+
+            obj.restingAgainst = null;
+
+            // check resting condition
+            this._staticPlanes.forEach(plane => {
+                if (plane.normal.y != 1) {
+                    return;
+                }
+
+                const {
+                    normal,
+                } = plane;
+
+                const normalVel = obj.vel.clone().multiplyScalar(obj.vel.dot(normal));
+
+                if (normalVel.y > 1e-3) {
+                    return;
+                }
+
+                const planeDist = obj.pos.y - obj.radius - (-5);
+
+                if (planeDist > 1e-3) {
+                    return;
+                }
+
+                obj.restingAgainst = plane;
+            });
         });
 
         const MAX_ITERATION = 20;
-        let iterations = 0;
 
-        while (iterations++ < MAX_ITERATION && timeRemaining > 0.01 * deltaT) {
+        while (timeRemaining > 0.01 * deltaT) {
             this._objects.forEach(obj => {
                 obj.integrate(timeSimulated);
             });
@@ -74,8 +100,6 @@ module.exports = class Simulator {
                             obj.respondToCollision(earliestCollision);
                         }
                     }
-
-                    console.log('-----------------------');
                 });
             }
 
@@ -136,7 +160,7 @@ module.exports = class Simulator {
             const objPlaneDist = obj.pos.clone().sub(point).dot(normal);
             const lastObjPlaneDist = obj.lastState.pos.clone().sub(point).dot(normal);
 
-            if (objPlaneDist <= obj.radius && lastObjPlaneDist > obj.radius) {
+            if (objPlaneDist < obj.radius && lastObjPlaneDist > obj.radius) {
                 const d0 = lastObjPlaneDist - obj.radius;
                 const d1 = objPlaneDist - obj.radius;
                 const collisionFraction = d0 / (d0 - d1);

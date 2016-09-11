@@ -33,6 +33,11 @@ module.exports = class SceneObject {
 
     integrate(deltaT) {
         this.vel.add(new THREE.Vector3(this.acc.x * deltaT, this.acc.y * deltaT, this.acc.z * deltaT));
+
+        if (this.restingAgainst) {
+            this.vel.y = 0;
+        }
+
         this.pos.add(new THREE.Vector3(this.vel.x * deltaT, this.vel.y * deltaT, this.vel.z * deltaT));
     }
 

@@ -4,12 +4,18 @@ module.exports = class UIControls extends EventEmitter {
     constructor() {
         super();
 
-        this._stepSizeSlider = document.getElementById('step-size-slider');
+        this._stepSizeControls = {
+            container: $('#step-size-slider'),
+            slider: $('#step-size-slider input'),
+            display: $('#step-size-slider .val-display'),
+        };
 
-        this._stepSizeSlider.addEventListener('change', this._handleSizeSliderChange.bind(this));
+        this._stepSizeControls.slider.on('mousemove', this._handleSizeSliderChange.bind(this));
     }
 
-    _handleSizeSliderChange(event) {
-        this.emit('step-size-changed', event);
+    _handleSizeSliderChange() {
+        const value = this._stepSizeControls.slider.val();
+        this._stepSizeControls.display.text(value);
+        this.emit('step-size-changed', value);
     }
 }
