@@ -42,13 +42,12 @@ module.exports = class SceneObject {
             normal,
         } = collision;
 
-        if (normal.y == 1) {
-            this.vel.y = -0.8 * this.vel.y;
-        } else if (normal.x == -1) {
-            this.vel.x = -0.8 * this.vel.x;
-        }
+        const normalVel = normal.clone().multiplyScalar(this.vel.dot(normal));
+        const tangentialVel = this.vel.clone().sub(normalVel);
 
-        //console.log(this.vel);
+        normalVel.multiplyScalar(-0.8);
+
+        this.vel.set(normalVel.x + tangentialVel.x, normalVel.y + tangentialVel.y, normalVel.z + tangentialVel.z);
     }
 
     updateGraphics() {

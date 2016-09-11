@@ -121,7 +121,7 @@ function initObjects() {
     // sceneObjects.push(ball2);
 
     const ball3 = new SphereObject(new THREE.Vector3(-4, 2, 0));
-    ball3.setInitialVelocity(new THREE.Vector3(5, 0, 0));
+    ball3.setInitialVelocity(new THREE.Vector3(5, 0, 3));
     ball3.addForce(new Gravity());
     simulator.addObject(ball3);
 
@@ -129,7 +129,11 @@ function initObjects() {
     sceneObjects.push(ball3);
 
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 1, 0)));
+    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0)));
+    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(-5, 0, 0), new THREE.Vector3(1, 0, 0)));
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(5, 0, 0), new THREE.Vector3(-1, 0, 0)));
+    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, -5), new THREE.Vector3(0, 0, 1)));
+    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, 5), new THREE.Vector3(0, 0, -1)));
 
     const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
     const boxMaterial = new THREE.MeshPhongMaterial({
