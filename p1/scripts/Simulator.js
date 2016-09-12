@@ -56,7 +56,7 @@ module.exports = class Simulator {
 
         while (timeRemaining > 0.01 * deltaT) {
             this._objects.forEach(obj => {
-                obj.integrate(timeSimulated);
+                obj.integrate(timeRemaining);
             });
 
             const collisions = this.getCollisions();
@@ -65,6 +65,10 @@ module.exports = class Simulator {
             let earliestCollision = null;
 
             if (collisions.length !== 0) {
+                if (collisions.length == 2) {
+                    console.log('two!!!');
+                }
+                console.log(collisions);
                 collisions.forEach(col => {
                     const obj = col.object;
                     obj.collisionNormal = col.normal;
@@ -95,7 +99,7 @@ module.exports = class Simulator {
                 });
             }
 
-            timeRemaining = timeRemaining - timeSimulated;
+            timeRemaining -= timeSimulated;
         }
 
         this._objects.forEach(obj => {

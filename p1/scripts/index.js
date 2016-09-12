@@ -8,12 +8,20 @@ const StaticPlane = require('./StaticPlane');
 const UIControls = require('./UIControls');
 
 class SphereObject extends SceneObject {
-    constructor(pos) {
+    constructor(pos, color) {
         super(pos);
+
+        this.name = `${color} ball`;
+
+        const colorMap = {
+            red: 0xff0000,
+            green: 0x00ff00,
+            blue: 0x0000ff,
+        }
 
         const ballGeometry = new THREE.SphereGeometry(1, 32, 32);
         const ballMaterial = new THREE.MeshPhongMaterial({
-            color: 0x00ff00,
+            color: colorMap[color],
             specular: 0x009900,
             shininess: 10,
         });
@@ -116,14 +124,14 @@ function initCamera() {
 }
 
 function initObjects() {
-    const ball = new SphereObject();
-    ball.addForce(new Gravity());
-    simulator.addObject(ball);
+    const ball1 = new SphereObject(new THREE.Vector3(0, 0, 0), 'red');
+    ball1.addForce(new Gravity());
+    simulator.addObject(ball1);
 
-    scene.add(ball.getGraphicsObject());
-    sceneObjects.push(ball);
+    scene.add(ball1.getGraphicsObject());
+    sceneObjects.push(ball1);
 
-    const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0));
+    const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0), 'green');
     ball2.setInitialVelocity(new THREE.Vector3(2, 0, 0));
     ball2.addForce(new Gravity());
     simulator.addObject(ball2);
@@ -131,13 +139,13 @@ function initObjects() {
     scene.add(ball2.getGraphicsObject());
     sceneObjects.push(ball2);
 
-    // const ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1));
-    // ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3.01));
-    // ball3.addForce(new Gravity());
-    // simulator.addObject(ball3);
-    //
-    // scene.add(ball3.getGraphicsObject());
-    // sceneObjects.push(ball3);
+    const ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1), 'blue');
+    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3.01));
+    ball3.addForce(new Gravity());
+    simulator.addObject(ball3);
+
+    scene.add(ball3.getGraphicsObject());
+    sceneObjects.push(ball3);
 
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 1, 0)));
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0)));
