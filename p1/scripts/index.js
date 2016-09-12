@@ -27,10 +27,17 @@ class SphereObject extends SceneObject {
         });
 
         this._graphicsObject = new THREE.Mesh(ballGeometry, ballMaterial);
+
+        const mousePickMaterial = new THREE.MeshBasicMaterial({
+            color: colorMap[color]
+        });
+
+        this._mousePickObject = new THREE.Mesh(ballGeometry, mousePickMaterial);
     }
 }
 
 const scene = new THREE.Scene();
+const mousePickScene = new THREE.Scene();
 const sceneObjects = [];
 
 let camera;
@@ -44,6 +51,13 @@ renderer.setSize(768, 500);
 renderer.setClearColor(0xffffff, 1);
 document.body.appendChild(renderer.domElement);
 
+const mousePickRenderer = new THREE.WebGLRenderer();
+mousePickRenderer.setSize(768, 500);
+mousePickRenderer.setClearColor(0x00f000, 1);
+document.body.appendChild(mousePickRenderer.domElement);
+
+const mousePickContext = mousePickRenderer.domElement.getContext('webgl');
+
 let dragging = false;
 let lastMousePos = null;
 
@@ -55,7 +69,7 @@ const cameraPos = {
 
 renderer.domElement.onwheel = (evt) => {
     evt.preventDefault(0);
-    const multiplier = 1 + evt.deltaY * 0.0005;
+    const multiplier = 1 + evt.deltaY * 0.001;
 
     cameraPos.x *= multiplier;
     cameraPos.z *= multiplier;
@@ -72,6 +86,9 @@ renderer.domElement.onmousedown = (evt) => {
         x: evt.clientX,
         y: evt.clientY,
     };
+
+    // const data = new Uint8Array(16);
+    // mousePickContext.readPixels(evt.offsetX, evt.offsetY, 2, 2, mousePickContext.RGBA, mousePickContext.UNSIGNED_BYTE, data);
 }
 
 renderer.domElement.onmousemove = (evt) => {
@@ -129,6 +146,7 @@ function initObjects() {
     simulator.addObject(ball1);
 
     scene.add(ball1.getGraphicsObject());
+    mousePickScene.add(ball1.getMousePickObject());
     sceneObjects.push(ball1);
 
     const ball2 = new SphereObject(new THREE.Vector3(-3, 3, 0), 'green');
@@ -137,6 +155,7 @@ function initObjects() {
     simulator.addObject(ball2);
 
     scene.add(ball2.getGraphicsObject());
+    mousePickScene.add(ball2.getMousePickObject());
     sceneObjects.push(ball2);
 
     const ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1), 'blue');
@@ -145,6 +164,7 @@ function initObjects() {
     simulator.addObject(ball3);
 
     scene.add(ball3.getGraphicsObject());
+    mousePickScene.add(ball3.getMousePickObject());
     sceneObjects.push(ball3);
 
     simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 1, 0)));
@@ -213,6 +233,7 @@ function simulate() {
     sceneObjects.forEach(so => so.updateGraphics());
 
     renderer.render(scene, camera);
+    // mousePickRenderer.render(mousePickScene, camera);
 
     stepCount++;
     requestAnimationFrame(simulate);

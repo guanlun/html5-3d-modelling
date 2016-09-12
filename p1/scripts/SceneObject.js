@@ -1,6 +1,7 @@
 module.exports = class SceneObject {
     constructor(pos) {
         this._graphicsObject = null;
+        this._mousePickObject = null;
 
         this.radius = 1;
 
@@ -23,6 +24,10 @@ module.exports = class SceneObject {
 
     getGraphicsObject() {
         return this._graphicsObject;
+    }
+
+    getMousePickObject() {
+        return this._mousePickObject;
     }
 
     calculateAcceleration() {
@@ -58,6 +63,7 @@ module.exports = class SceneObject {
 
     updateGraphics() {
         this._graphicsObject.position.set(this.pos.x, this.pos.y, this.pos.z);
+        this._mousePickObject.position.set(this.pos.x, this.pos.y, this.pos.z);
     }
 
     restoreLastState() {

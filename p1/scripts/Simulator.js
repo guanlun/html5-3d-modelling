@@ -13,6 +13,10 @@ module.exports = class Simulator {
         this._objects.push(object);
     }
 
+    getObjects() {
+        return this._objects;
+    }
+
     addStaticPlane(so) {
         this._staticPlanes.push(so);
     }
@@ -65,10 +69,6 @@ module.exports = class Simulator {
             let earliestCollision = null;
 
             if (collisions.length !== 0) {
-                if (collisions.length == 2) {
-                    console.log('two!!!');
-                }
-                console.log(collisions);
                 collisions.forEach(col => {
                     const obj = col.object;
                     obj.collisionNormal = col.normal;
