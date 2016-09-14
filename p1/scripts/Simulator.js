@@ -21,8 +21,11 @@ module.exports = class Simulator {
         this._staticPlanes.push(so);
     }
 
+    clearStaticPlanes() {
+        this._staticPlanes = [];
+    }
+
     simulate(deltaT) {
-        let timeSimulated = deltaT;
         let timeRemaining = deltaT;
 
         this._objects.forEach(obj => {
@@ -59,6 +62,7 @@ module.exports = class Simulator {
         const MAX_ITERATION = 20;
 
         while (timeRemaining > 0.01 * deltaT) {
+            let timeSimulated = timeRemaining;
             this._objects.forEach(obj => {
                 obj.integrate(timeRemaining);
             });
@@ -69,6 +73,7 @@ module.exports = class Simulator {
             let earliestCollision = null;
 
             if (collisions.length !== 0) {
+                // console.log(collisions);
                 collisions.forEach(col => {
                     const obj = col.object;
                     obj.collisionNormal = col.normal;
@@ -87,8 +92,10 @@ module.exports = class Simulator {
                 this._objects.forEach(obj => {
                     obj.restoreLastState();
                     obj.integrate(timeSimulated);
+                    // obj.updateLastState();
 
                     if (earliestCollision) {
+                        // console.log(timeSimulated);
                         if (
                             obj === earliestCollision.object ||
                             obj === earliestCollision.withObject
@@ -100,11 +107,19 @@ module.exports = class Simulator {
             }
 
             timeRemaining -= timeSimulated;
-        }
 
-        this._objects.forEach(obj => {
-            obj.updateLastState(deltaT);
-        });
+            this._objects.forEach(obj => {
+                // if ((Math.abs(obj.pos.x) > 4 || Math.abs(obj.pos.y) > 4 || Math.abs(obj.pos.z) > 4) &&
+                //     (Math.abs(obj.lastState.pos.x) < 4 && Math.abs(obj.lastState.pos.y) < 4 && Math.abs(obj.lastState.pos.z) < 4)) {
+                //     console.log('-----------------------------------------');
+                //     console.log('pos', obj.pos);
+                //     console.log('vel', obj.vel);
+                //     console.log('lastPos', obj.lastState.pos);
+                //     console.log('lastVel', obj.lastState.vel);
+                // }
+                obj.updateLastState();
+            });
+        }
     }
 
     getCollisions() {

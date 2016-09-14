@@ -4,6 +4,12 @@ module.exports = class UIControls extends EventEmitter {
     constructor() {
         super();
 
+        this._resetButton = $('#reset-button');
+        this._resetButton.on('click', this._handleResetButtonClick.bind(this));
+
+        this._containerShapeSelect = $('#container-shape-select select');
+        this._containerShapeSelect.on('change', this._handleContainerShapeSelectChange.bind(this));
+
         this._stepSizeControls = {
             container: $('#step-size-slider'),
             slider: $('#step-size-slider input'),
@@ -24,6 +30,14 @@ module.exports = class UIControls extends EventEmitter {
             display: $('#friction-coeff-slider .val-display'),
         };
         this._frictionCoeffControls.slider.on('mousemove', this._handleFrictionCoeffChange.bind(this));
+    }
+
+    _handleContainerShapeSelectChange() {
+        this.emit('container-shape-changed', this._containerShapeSelect.val());
+    }
+
+    _handleResetButtonClick() {
+        this.emit('reset-button-clicked');
     }
 
     _handleSizeSliderChange() {
