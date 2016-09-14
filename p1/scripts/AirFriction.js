@@ -4,19 +4,22 @@ module.exports = class AirFriction extends Force {
     constructor() {
         super();
 
-        this._frictionCoefficient = 1;
+        this._frictionCoefficient = 0.1;
     }
 
-    apply(collider) {
-        const v = collider.getVelocity();
-        const m = collider.getMass();
+    apply(object) {
+        const v = object.vel;
 
         const force = new THREE.Vector3(
-            -v.x * this._frictionCoefficient / m,
-            -v.y * this._frictionCoefficient / m,
-            -v.z * this._frictionCoefficient / m
+            -v.x * this._frictionCoefficient,
+            -v.y * this._frictionCoefficient,
+            -v.z * this._frictionCoefficient
         );
 
-        collider.getAcceleration().add(force);
+        object.acc.add(force);
+    }
+
+    setCoefficient(c) {
+        this._frictionCoefficient = c;
     }
 }

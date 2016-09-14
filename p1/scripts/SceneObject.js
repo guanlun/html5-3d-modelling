@@ -30,10 +30,10 @@ module.exports = class SceneObject {
         return this._mousePickObject;
     }
 
-    calculateAcceleration() {
+    calculateAcceleration(forces) {
         this.acc.set(0, 0, 0);
 
-        this._forces.forEach(f => f.apply(this));
+        forces.forEach(f => f.apply(this));
     }
 
     integrate(deltaT) {
@@ -51,7 +51,6 @@ module.exports = class SceneObject {
             point,
             normal,
         } = collision;
-        // console.log('original vel', this.vel);
 
         const normalVel = normal.clone().multiplyScalar(this.vel.dot(normal));
         const tangentialVel = this.vel.clone().sub(normalVel);
@@ -60,11 +59,6 @@ module.exports = class SceneObject {
         tangentialVel.multiplyScalar(1 - frictionCoeff);
 
         this.vel.set(normalVel.x + tangentialVel.x, normalVel.y + tangentialVel.y, normalVel.z + tangentialVel.z);
-
-        // console.log(normal);
-        // console.log('handling pos', this.pos);
-        // console.log('handling vel', this.vel);
-        // console.log('.');
     }
 
     updateGraphics() {

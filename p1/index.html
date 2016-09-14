@@ -13,12 +13,24 @@
         #ui-controls .row {
             padding-bottom: 20px;
         }
+
+        .btn-lg {
+            font-size: 120px;
+        }
+
+        .disclaimer {
+            position: absolute;
+            bottom: 0;
+            right: 20px;
+        }
 	</style>
 </head>
 <body>
     <div class="col-md-6 pull-right" id="ui-controls">
         <div class="row">
-            <button id="reset-button" class="btn btn-default">THROW!!!</button>
+            <div class="col-md-8 col-md-offset-3">
+                <button id="reset-button" class="btn btn-lg btn-default">Throw</button>
+            </div>
         </div>
 
         <div id="container-shape-select" class="row">
@@ -35,12 +47,12 @@
 
         <div id="step-size-slider" class="row">
             <div class="col-md-3">
-                Step size
+                Steps per frame
             </div>
             <div class="col-md-8">
-                <input type="range" min="0.01" max="0.05" step="0.01" value="0.01" />
+                <input type="range" min="1" max="5" step="1" value="1" />
             </div>
-            <div class="col-md-1 val-display">0.01</div>
+            <div class="col-md-1 val-display">1</div>
         </div>
 
         <div id="elasticity-slider" class="row">
@@ -48,7 +60,7 @@
                 Elasticity
             </div>
             <div class="col-md-8">
-                <input type="range" min="0" max="1" step="0.1" value="0.5" />
+                <input type="range" min="0.1" max="0.9" step="0.1" value="0.5" />
             </div>
             <div class="col-md-1 val-display">0.5</div>
         </div>
@@ -58,10 +70,23 @@
                 Friction Coefficient
             </div>
             <div class="col-md-8">
-                <input type="range" min="0" max="1" step="0.1" value="0.5" />
+                <input type="range" min="0.1" max="0.9" step="0.1" value="0.5" />
             </div>
             <div class="col-md-1 val-display">0.5</div>
         </div>
+
+        <div id="air-friction-slider" class="row">
+            <div class="col-md-3">
+                Air Friction
+            </div>
+            <div class="col-md-8">
+                <input type="range" min="0" max="5" step="0.1" value="0.1" />
+            </div>
+            <div class="col-md-1 val-display">0.1</div>
+        </div>
+    </div>
+    <div class="disclaimer">
+        Disclaimer: No eggs were harmed during the making of this simulation.
     </div>
     <script src="scripts/jquery/jquery-3.1.0.min.js"></script>
     <script src="scripts/three.js-master/build/three.js"></script>

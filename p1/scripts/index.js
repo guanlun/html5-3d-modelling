@@ -2,97 +2,68 @@ const Force = require('./Force');
 const Gravity = require('./Gravity');
 const AirFriction = require('./AirFriction');
 const Simulator = require('./Simulator');
-const SceneObject = require('./SceneObject');
 const StaticPlane = require('./StaticPlane');
-
+const SphereObject = require('./SphereObject');
 const UIControls = require('./UIControls');
 
-class SphereObject extends SceneObject {
-    constructor(pos, color) {
-        super(pos);
-
-        this.name = `${color} ball`;
-
-        const colorMap = {
-            red: 0xff0000,
-            green: 0x00ff00,
-            blue: 0x0000ff,
-        }
-
-        const ballGeometry = new THREE.SphereGeometry(1, 32, 32);
-        const ballMaterial = new THREE.MeshPhongMaterial({
-            color: colorMap[color],
-            specular: 0x009900,
-            shininess: 10,
-        });
-
-        this._graphicsObject = new THREE.Mesh(ballGeometry, ballMaterial);
-
-        const mousePickMaterial = new THREE.MeshBasicMaterial({
-            color: colorMap[color]
-        });
-
-        this._mousePickObject = new THREE.Mesh(ballGeometry, mousePickMaterial);
-    }
-}
-
 const scene = new THREE.Scene();
-const mousePickScene = new THREE.Scene();
-const sceneObjects = [];
 
-let camera;
+const props = {
+    stepsPerFrame: 1,
+
+    camera: null,
+    cameraPos: {
+        x: 9,
+        y: 12,
+        z: 15,
+    },
+
+    gravity: null,
+    airFriction: null,
+
+    planes: [],
+    cone: null,
+
+    ball1: null,
+    ball2: null,
+    ball3: null,
+
+    dragging: false,
+    lastMousePos: null,
+}
 
 const simulator = new Simulator();
 
 const renderer = new THREE.WebGLRenderer({
     antialias: true,
 });
-renderer.setSize(768, 500);
+renderer.setSize(720, 500);
 renderer.setClearColor(0xffffff, 1);
 document.body.appendChild(renderer.domElement);
-
-const mousePickRenderer = new THREE.WebGLRenderer();
-mousePickRenderer.setSize(768, 500);
-mousePickRenderer.setClearColor(0x00f000, 1);
-// document.body.appendChild(mousePickRenderer.domElement);
-
-const mousePickContext = mousePickRenderer.domElement.getContext('webgl');
-
-let dragging = false;
-let lastMousePos = null;
-
-const cameraPos = {
-    x: 9,
-    y: 12,
-    z: 15,
-};
 
 renderer.domElement.onwheel = (evt) => {
     evt.preventDefault(0);
     const multiplier = 1 + evt.deltaY * 0.001;
 
-    cameraPos.x *= multiplier;
-    cameraPos.z *= multiplier;
-    cameraPos.y *= multiplier;
+    props.cameraPos.x *= multiplier;
+    props.cameraPos.z *= multiplier;
+    props.cameraPos.y *= multiplier;
 
-    camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    props.camera.position.set(props.cameraPos.x, props.cameraPos.y, props.cameraPos.z);
+    props.camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
 renderer.domElement.onmousedown = (evt) => {
-    dragging = true;
+    props.dragging = true;
 
-    lastMousePos = {
+    props.lastMousePos = {
         x: evt.clientX,
         y: evt.clientY,
     };
-
-    // const data = new Uint8Array(16);
-    // mousePickContext.readPixels(evt.offsetX, evt.offsetY, 2, 2, mousePickContext.RGBA, mousePickContext.UNSIGNED_BYTE, data);
 }
 
 renderer.domElement.onmousemove = (evt) => {
-    if (!dragging) {
+    if (!props.dragging) {
         return;
     }
 
@@ -102,47 +73,43 @@ renderer.domElement.onmousemove = (evt) => {
     };
 
     const mousePosDiff = {
-        x: currMousePos.x - lastMousePos.x,
-        y: currMousePos.y - lastMousePos.y,
+        x: currMousePos.x - props.lastMousePos.x,
+        y: currMousePos.y - props.lastMousePos.y,
     };
 
-    const distXZ = Math.sqrt(cameraPos.x * cameraPos.x + cameraPos.z * cameraPos.z);
-    const dist = Math.sqrt(distXZ * distXZ + cameraPos.y * cameraPos.y);
+    const distXZ = Math.sqrt(props.cameraPos.x * props.cameraPos.x + props.cameraPos.z * props.cameraPos.z);
+    const dist = Math.sqrt(distXZ * distXZ + props.cameraPos.y * props.cameraPos.y);
 
-    const currXZAngle = Math.atan2(cameraPos.z, cameraPos.x);
+    const currXZAngle = Math.atan2(props.cameraPos.z, props.cameraPos.x);
     const newXZAngle = currXZAngle + mousePosDiff.x / 57.3;
-    const currYAngle = Math.atan2(cameraPos.y, distXZ);
+    const currYAngle = Math.atan2(props.cameraPos.y, distXZ);
     const newYAngle = currYAngle + mousePosDiff.y / 57.3;
 
-    cameraPos.x = dist * Math.cos(newYAngle) * Math.cos(newXZAngle);
-    cameraPos.z = dist * Math.cos(newYAngle) * Math.sin(newXZAngle);
-    cameraPos.y = dist * Math.sin(newYAngle);
+    props.cameraPos.x = dist * Math.cos(newYAngle) * Math.cos(newXZAngle);
+    props.cameraPos.z = dist * Math.cos(newYAngle) * Math.sin(newXZAngle);
+    props.cameraPos.y = dist * Math.sin(newYAngle);
 
-    camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    props.camera.position.set(props.cameraPos.x, props.cameraPos.y, props.cameraPos.z);
+    props.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-    lastMousePos = currMousePos;
+    props.lastMousePos = currMousePos;
 }
 
 renderer.domElement.onmouseup = (evt) => {
-    dragging = false;
+    props.dragging = false;
 }
 
 function initCamera() {
-    camera = new THREE.PerspectiveCamera(
+    props.camera = new THREE.PerspectiveCamera(
         75,
-        768 / 500,
+        720 / 500,
         0.1,
         1000
     );
 
-    camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    props.camera.position.set(props.cameraPos.x, props.cameraPos.y, props.cameraPos.z);
+    props.camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
-
-let ball1, ball2, ball3;
-let planes = [];
-let cone = null;
 
 function initContainer(shape) {
     simulator.clearStaticPlanes();
@@ -156,82 +123,81 @@ function initContainer(shape) {
     });
 
     if (shape === 'box') {
-        scene.remove(cone);
+        scene.remove(props.cone);
 
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 1, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(-5, 0, 0), new THREE.Vector3(1, 0, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(5, 0, 0), new THREE.Vector3(-1, 0, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, -5), new THREE.Vector3(0, 0, 1)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, 5), new THREE.Vector3(0, 0, -1)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 0), new THREE.Vector3(0, 1, 0)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 10, 0), new THREE.Vector3(0, -1, 0)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(-10, 0, 0), new THREE.Vector3(1, 0, 0)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(10, 0, 0), new THREE.Vector3(-1, 0, 0)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, -10), new THREE.Vector3(0, 0, 1)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, 10), new THREE.Vector3(0, 0, -1)));
 
-        const planeGeometry = new THREE.PlaneGeometry(10, 10);
+        const planeGeometry = new THREE.PlaneGeometry(20, 20);
         const plane1 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane1.position.set(0, 0, 5);
+        plane1.position.set(0, 0, 10);
         scene.add(plane1);
 
         const plane2 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane2.position.set(0, 0, -5);
+        plane2.position.set(0, 0, -10);
         scene.add(plane2);
 
         const plane3 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane3.position.set(-5, 0, 0);
+        plane3.position.set(-10, 0, 0);
         plane3.rotation.y = -Math.PI / 2;
         scene.add(plane3);
 
         const plane4 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane4.position.set(5, 0, 0);
+        plane4.position.set(10, 0, 0);
         plane4.rotation.y = -Math.PI / 2;
         scene.add(plane4);
 
-        planes = [plane1, plane2, plane3, plane4];
+        props.planes = [plane1, plane2, plane3, plane4];
 
     } else if (shape === 'pyramid') {
-        planes.forEach(p => scene.remove(p));
+        props.planes.forEach(p => scene.remove(p));
 
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 0), new THREE.Vector3(0, 1, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(-5, -5, 0), new THREE.Vector3(0.866, -0.5, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(5, -5, 0), new THREE.Vector3(-0.866, -0.5, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, -5), new THREE.Vector3(0, -0.5, 0.866)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -5, 5), new THREE.Vector3(0, -0.5, -0.866)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 0), new THREE.Vector3(0, 1, 0)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(0.866, -0.5, 0)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(10, -10, 0), new THREE.Vector3(-0.866, -0.5, 0)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, -10), new THREE.Vector3(0, -0.5, 0.866)));
+        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 10), new THREE.Vector3(0, -0.5, -0.866)));
 
         const coneGeometry = new THREE.ConeGeometry(
-            7.07, 10, 4
+            7.07 * 2, 10 * 2, 4
         );
 
-        cone = new THREE.Mesh(coneGeometry, containerMaterial);
-        cone.position.set(0, 0, 0);
-        cone.rotation.y = -Math.PI / 4;
-        scene.add(cone);
+        props.cone = new THREE.Mesh(coneGeometry, containerMaterial);
+        props.cone.position.set(0, 0, 0);
+        props.cone.rotation.y = -Math.PI / 4;
+        scene.add(props.cone);
     }
 }
 
+function initForces() {
+    props.gravity = new Gravity();
+    props.airFriction = new AirFriction();
+}
+
 function initObjects() {
-    ball1 = new SphereObject(new THREE.Vector3(0, 0, 0), 'red');
-    ball1.addForce(new Gravity());
-    simulator.addObject(ball1);
+    simulator.addForce(props.gravity);
+    simulator.addForce(props.airFriction);
 
-    scene.add(ball1.getGraphicsObject());
-    mousePickScene.add(ball1.getMousePickObject());
-    sceneObjects.push(ball1);
+    props.ball1 = new SphereObject(new THREE.Vector3(0, 0, 0), 'red');
+    simulator.addObject(props.ball1);
 
-    ball2 = new SphereObject(new THREE.Vector3(-3, -2, 0), 'green');
-    ball2.setInitialVelocity(new THREE.Vector3(2, 0, 0));
-    ball2.addForce(new Gravity());
-    simulator.addObject(ball2);
+    scene.add(props.ball1.getGraphicsObject());
 
-    scene.add(ball2.getGraphicsObject());
-    mousePickScene.add(ball2.getMousePickObject());
-    sceneObjects.push(ball2);
+    props.ball2 = new SphereObject(new THREE.Vector3(-3, -2, 0), 'green');
+    props.ball2.setInitialVelocity(new THREE.Vector3(2, 0, 0));
+    simulator.addObject(props.ball2);
 
-    ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1), 'blue');
-    ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3.01));
-    ball3.addForce(new Gravity());
-    simulator.addObject(ball3);
+    scene.add(props.ball2.getGraphicsObject());
 
-    scene.add(ball3.getGraphicsObject());
-    mousePickScene.add(ball3.getMousePickObject());
-    sceneObjects.push(ball3);
+    props.ball3 = new SphereObject(new THREE.Vector3(-1, -3, -1), 'blue');
+    props.ball3.setInitialVelocity(new THREE.Vector3(3, 0, 3.01));
+    simulator.addObject(props.ball3);
+
+    scene.add(props.ball3.getGraphicsObject());
 }
 
 function initLight() {
@@ -239,64 +205,58 @@ function initLight() {
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(0, 10, 10);
+    directionalLight.position.set(0, 30, 30);
     scene.add(directionalLight);
 }
 
-initCamera();
-initObjects();
-initContainer('box');
-initLight();
+function initControls() {
+    const controls = new UIControls();
 
-let simulationStepSize = 0.01;
+    controls.addListener('reset-button-clicked', throwIntoTheAir);
 
-const SIM_MULTIPLIER = 0.01;
+    controls.addListener('container-shape-changed', (shape) => {
+        initContainer(shape);
+    });
 
-let stepsPerSample;
-computeStepPerSample();
-let stepCount = 0;
+    controls.addListener('step-size-changed', val => {
+        props.stepsPerFrame = val;
+    });
 
-function simulate() {
-    for (let i = 0; i < stepsPerSample; i++) {
-        simulator.simulate(0.01 / stepsPerSample);
-    }
+    controls.addListener('elasticity-changed', val => {
+        simulator.elasticity = val;
+    });
 
-    sceneObjects.forEach(so => so.updateGraphics());
+    controls.addListener('friction-coeff-changed', val => {
+        simulator.frictionCoeff = val;
+    });
 
-    renderer.render(scene, camera);
-
-    stepCount++;
-    requestAnimationFrame(simulate);
-}
-simulate();
-
-function computeStepPerSample() {
-    stepsPerSample = Math.floor(simulationStepSize / SIM_MULTIPLIER);
+    controls.addListener('air-friction-changed', val => {
+        props.airFriction.setCoefficient(val);
+    });
 }
 
 function throwIntoTheAir() {
-    ball1.vel.set(1.3, 10, 0);
-    ball2.vel.set(0, 12, 4.01);
-    ball3.vel.set(1, 13, Math.random() * 5);
+    props.ball1.vel.set(1.3, 10.01, 0);
+    props.ball2.vel.set(0, 12.01, 4.01);
+    props.ball3.vel.set(1.01, 13, Math.random() * 5);
 }
 
-const controls = new UIControls();
+initCamera();
+initForces();
+initObjects();
+initContainer('box');
+initLight();
+initControls();
 
-controls.addListener('reset-button-clicked', throwIntoTheAir);
+function simulate() {
+    for (let i = 0; i < props.stepsPerFrame; i++) {
+        simulator.simulate(0.01 / props.stepsPerFrame);
+    }
 
-controls.addListener('container-shape-changed', (shape) => {
-    initContainer(shape);
-});
+    simulator.refreshDispaly();
 
-controls.addListener('step-size-changed', val => {
-    simulationStepSize = val;
-    computeStepPerSample();
-});
+    renderer.render(scene, props.camera);
 
-controls.addListener('elasticity-changed', val => {
-    simulator.elasticity = val;
-});
-
-controls.addListener('friction-coeff-changed', val => {
-    simulator.frictionCoeff = val;
-});
+    requestAnimationFrame(simulate);
+}
+simulate();
