@@ -81,14 +81,6 @@ module.exports = class Simulator {
             timeRemaining -= timeSimulated;
 
             this._objects.forEach(obj => {
-                // if ((Math.abs(obj.pos.x) > 4 || Math.abs(obj.pos.y) > 4 || Math.abs(obj.pos.z) > 4) &&
-                //     (Math.abs(obj.lastState.pos.x) < 4 && Math.abs(obj.lastState.pos.y) < 4 && Math.abs(obj.lastState.pos.z) < 4)) {
-                //     console.log('-----------------------------------------');
-                //     console.log('pos', obj.pos);
-                //     console.log('vel', obj.vel);
-                //     console.log('lastPos', obj.lastState.pos);
-                //     console.log('lastVel', obj.lastState.vel);
-                // }
                 obj.updateLastState();
             });
         }
