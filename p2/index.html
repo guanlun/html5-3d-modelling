@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bouncing Ball Simulation</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <style>
+		body { margin: 0; }
+		canvas { width: 100%; height: 100% }
+        #ui-controls {
+            padding: 30px;
+        }
+
+        #ui-controls .row {
+            padding-bottom: 20px;
+        }
+
+        .btn-lg {
+            font-size: 120px;
+        }
+
+        .disclaimer {
+            position: absolute;
+            bottom: 0;
+            right: 20px;
+        }
+	</style>
+</head>
+<body>
+    <div class="col-md-6 pull-right" id="ui-controls">
+        <div class="row">
+            <div class="col-md-8 col-md-offset-3">
+                <button id="reset-button" class="btn btn-lg btn-default">Throw</button>
+            </div>
+        </div>
+
+        <div id="container-shape-select" class="row">
+            <div class="col-md-3">
+                Container
+            </div>
+            <div class="col-md-8">
+                <select>
+                    <option value="box">Box</option>
+                    <option value="pyramid">Pyramid</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="step-size-slider" class="row">
+            <div class="col-md-3">
+                Steps per frame
+            </div>
+            <div class="col-md-8">
+                <input type="range" min="1" max="5" step="1" value="1" />
+            </div>
+            <div class="col-md-1 val-display">1</div>
+        </div>
+
+        <div id="elasticity-slider" class="row">
+            <div class="col-md-3">
+                Elasticity
+            </div>
+            <div class="col-md-8">
+                <input type="range" min="0.1" max="0.9" step="0.1" value="0.5" />
+            </div>
+            <div class="col-md-1 val-display">0.5</div>
+        </div>
+
+        <div id="friction-coeff-slider" class="row">
+            <div class="col-md-3">
+                Friction Coefficient
+            </div>
+            <div class="col-md-8">
+                <input type="range" min="0.1" max="0.9" step="0.1" value="0.5" />
+            </div>
+            <div class="col-md-1 val-display">0.5</div>
+        </div>
+
+        <div id="air-friction-slider" class="row">
+            <div class="col-md-3">
+                Air Friction
+            </div>
+            <div class="col-md-8">
+                <input type="range" min="0" max="5" step="0.1" value="0.1" />
+            </div>
+            <div class="col-md-1 val-display">0.1</div>
+        </div>
+    </div>
+    <script src="scripts/jquery/jquery-3.1.0.min.js"></script>
+    <script src="scripts/three.js-master/build/three.js"></script>
+	<script src="scripts/bundle.js"></script>
+</body>
+</html>
