@@ -13,9 +13,9 @@ const props = {
 
     camera: null,
     cameraPos: {
-        x: 9,
-        y: 12,
-        z: 15,
+        x: 30,
+        y: 40,
+        z: 40,
     },
 
     gravity: null,
@@ -40,6 +40,10 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(720, 500);
 renderer.setClearColor(0x000000, 1);
 document.body.appendChild(renderer.domElement);
+
+// const gl = renderer.domElement.getContext('webgl');
+//
+// console.log(gl);
 
 renderer.domElement.onwheel = (evt) => {
     evt.preventDefault(0);
@@ -179,26 +183,51 @@ function initForces() {
 }
 
 function initObjects() {
-    const particles = new THREE.Geometry();
+    const particles = new THREE.BufferGeometry();
 
-    for (let i = 0; i < 5000; i++) {
-        const x = Math.random() * 400 - 200;
-        const y = Math.random() * 400 - 200;
-        const z = Math.random() * 400 - 200;
+    const positions = new Float32Array(1000 * 3);
+    const ages = new Float32Array(1000);
 
-        const particle = new THREE.Vector3(x, y, z);
-        particles.vertices.push(particle);
+    for (let i = 0; i < 1000; i++) {
+        const x = 0; // Math.random() * 400 - 200;
+        const y = 0; // Math.random() * 400 - 200;
+        const z = 0; // Math.random() * 400 - 200;
+
+        // const particle = new THREE.Vector3(x, y, z);
+        // particles.vertices.push(particle);
+
+        positions[i * 3] = 0;
+        positions[i * 3 + 1] = 0;
+        positions[i * 3 + 2] = 0;
+
+        ages[i] = 1.0;
     }
 
-    const particleMaterial = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 5,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        opacity: 0.5,
+    particles.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particles.addAttribute('age', new THREE.BufferAttribute(ages, 1));
+
+    simulator.setParticles(particles);
+
+    const particleShader = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
     });
 
-    const particleSystem = new THREE.Points(particles, particleMaterial);
+    // const particleMaterial = new THREE.LineBasicMaterial({
+    //     color: 0xff9900,
+    //     linewidth: 2,
+    //     blending: THREE.AdditiveBlending,
+    //     transparent: true,
+    //     opacity: 0.75,
+    // });
+
+    // const particleSystem = new THREE.LineSegments(particles, particleMaterial);
+    const particleSystem = new THREE.Points(particles, particleShader);
+    // const particleSystem = new THREE.Points(particles, new THREE.PointsMaterial({
+    //     color: 0xff0000,
+    // }));
+
+    // simulator.shader = particleShader;
 
     scene.add(particleSystem);
 }
@@ -214,8 +243,6 @@ function initLight() {
 
 function initControls() {
     const controls = new UIControls();
-
-    // controls.addListener('reset-button-clicked', throwIntoTheAir);
 
     controls.addListener('container-shape-changed', (shape) => {
         initContainer(shape);
@@ -241,7 +268,7 @@ function initControls() {
 initCamera();
 initForces();
 initObjects();
-initContainer('box');
+// initContainer('box');
 initLight();
 initControls();
 

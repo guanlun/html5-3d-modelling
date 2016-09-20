@@ -27,24 +27,6 @@
 </head>
 <body>
     <div class="col-md-6 pull-right" id="ui-controls">
-        <div class="row">
-            <div class="col-md-8 col-md-offset-3">
-                <button id="reset-button" class="btn btn-lg btn-default">Throw</button>
-            </div>
-        </div>
-
-        <div id="container-shape-select" class="row">
-            <div class="col-md-3">
-                Container
-            </div>
-            <div class="col-md-8">
-                <select>
-                    <option value="box">Box</option>
-                    <option value="pyramid">Pyramid</option>
-                </select>
-            </div>
-        </div>
-
         <div id="step-size-slider" class="row">
             <div class="col-md-3">
                 Steps per frame
@@ -85,6 +67,28 @@
             <div class="col-md-1 val-display">0.1</div>
         </div>
     </div>
+
+    <!-- Shaders -->
+    <div id="vertexShader">
+        attribute float age;
+        varying float fAge;
+
+        void main() {
+            fAge = age;
+            gl_PointSize = 3.0;
+            gl_Position = projectionMatrix *
+                          modelViewMatrix *
+                          vec4(position, 1.0);
+        }
+    </div>
+
+    <div id="fragmentShader">
+        varying float fAge;
+        void main() {
+            gl_FragColor = vec4(fAge, fAge, fAge, fAge);
+        }
+    </div>
+
     <script src="scripts/jquery/jquery-3.1.0.min.js"></script>
     <script src="scripts/three.js-master/build/three.js"></script>
 	<script src="scripts/bundle.js"></script>

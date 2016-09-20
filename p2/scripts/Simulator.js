@@ -1,3 +1,5 @@
+const SEG_LEN = 4;
+
 module.exports = class Simulator {
     constructor() {
         this._objects = [];
@@ -7,6 +9,8 @@ module.exports = class Simulator {
         this.elasticity = 0.5;
         this.frictionCoeff = 0.5;
         this.airFriction = 0.1;
+
+        this._currGenerated = 0;
     }
 
     addObject(object) {
@@ -25,65 +29,74 @@ module.exports = class Simulator {
         this._staticPlanes = [];
     }
 
-    simulate(deltaT) {
-        let timeRemaining = deltaT;
+    setParticles(particles) {
+        this._particles = particles;
 
-        this._objects.forEach(obj => {
-            obj.calculateAcceleration(this._forces);
+        this._length = particles.attributes.position.array.length / 3;
+        console.log(this._length);
+        // this._length = particles.vertices.length / SEG_LEN;
 
-            this.checkResting(obj);
-        });
+        this._particleVel = [];
 
-        const MAX_ITERATION = 20;
-
-        while (timeRemaining > 0) {
-            let timeSimulated = timeRemaining;
-            this._objects.forEach(obj => {
-                obj.integrate(timeRemaining);
-            });
-
-            const collisions = this.getCollisions();
-
-            let earliestCollisionTime = deltaT;
-            let earliestCollision = null;
-
-            if (collisions.length !== 0) {
-                collisions.forEach(col => {
-                    const obj = col.object;
-                    obj.collisionNormal = col.normal;
-
-                    const collisionTime = col.fraction * deltaT;
-
-                    if (collisionTime < earliestCollisionTime) {
-                        // Get the earliest collision in this timestep
-                        earliestCollisionTime = collisionTime;
-                        earliestCollision = col;
-                    }
-                });
-
-                timeSimulated = earliestCollisionTime;
-
-                this._objects.forEach(obj => {
-                    obj.restoreLastState();
-                    obj.integrate(timeSimulated);
-
-                    if (earliestCollision) {
-                        if (
-                            obj === earliestCollision.object ||
-                            obj === earliestCollision.withObject
-                        ) {
-                            obj.respondToCollision(earliestCollision, this.elasticity, this.frictionCoeff);
-                        }
-                    }
-                });
-            }
-
-            timeRemaining -= timeSimulated;
-
-            this._objects.forEach(obj => {
-                obj.updateLastState();
-            });
+        for (let i = 0; i < this._length; i++) {
+            const x = (Math.random() * 0.5);
+            const y = (Math.random() * 0.5);
+            const z = (Math.random() * 0.5);
+            this._particleVel.push([x, y, z]);
         }
+    }
+
+    simulate(deltaT) {
+        // return;
+        if (this._currGenerated < this._length) {
+            this._currGenerated += (Math.random() * 10 + 20);
+
+            if (this._currGenerated > this._length) {
+                this._currGenerated = this._length;
+            }
+        }
+        for (let i = 0; i < this._currGenerated; i++) {
+            // for (let j = SEG_LEN - 1; j >= 1; j--) {
+            //     let srcIdx;
+            //
+            //     if (j == 1) {
+            //         srcIdx = 0;
+            //     } else {
+            //         srcIdx = j - 2;
+            //     }
+            //
+            //     const prevParticle = this._particles.vertices[i * SEG_LEN + j];
+            //     const srcParticle = this._particles.vertices[i * SEG_LEN + srcIdx];
+            //
+            //     prevParticle.x = srcParticle.x;
+            //     prevParticle.y = srcParticle.y;
+            //     prevParticle.z = srcParticle.z;
+            // }
+            //
+            // const particle = this._particles.vertices[i * SEG_LEN];
+            //
+            this._particleVel[i][1] -= 0.01;
+            //
+            // particle.x += this._particleVel[i][0];
+            // particle.y += this._particleVel[i][1];
+            // particle.z += this._particleVel[i][2];
+
+            const p = this._particles.attributes.position.array;
+            // console.log(p);
+            p[i * 3] += this._particleVel[i][0];
+            p[i * 3 + 1] += this._particleVel[i][1];
+            p[i * 3 + 2] += this._particleVel[i][2];
+            // console.log(p);
+            // console.log(this._particleVel[i]);
+
+            this._particles.attributes.age.array[i] -= 0.01;
+        }
+
+        this._particles.attributes.position.needsUpdate = true;
+        this._particles.attributes.age.needsUpdate = true;
+        // this.randColor = new THREE.Vector3(Math.random(), Math.random(), Math.random());
+        // this.shader.S
+        // this._particles.verticesNeedUpdate = true;
     }
 
     getCollisions() {
