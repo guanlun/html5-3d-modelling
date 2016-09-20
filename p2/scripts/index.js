@@ -30,6 +30,8 @@ const props = {
 
     dragging: false,
     lastMousePos: null,
+
+    pointLight: null,
 }
 
 const simulator = new Simulator();
@@ -60,10 +62,26 @@ renderer.domElement.onwheel = (evt) => {
 renderer.domElement.onmousedown = (evt) => {
     props.dragging = true;
 
-    props.lastMousePos = {
-        x: evt.clientX,
-        y: evt.clientY,
+    props.pointLight.intensity = 50;
+
+    const x = (evt.clientX - 360) / 8;
+    const y = -(evt.clientY - 250) / 8;
+    const z = 0.1;
+
+    props.pointLight.position.set(x, y, z);
+
+    simulator.startPos = {
+        x: x,
+        y: y,
+        z: z,
     };
+
+    simulator.generateParticles = true;
+
+    // props.lastMousePos = {
+    //     x: evt.clientX,
+    //     y: evt.clientY,
+    // };
 }
 
 renderer.domElement.onmousemove = (evt) => {
@@ -71,36 +89,52 @@ renderer.domElement.onmousemove = (evt) => {
         return;
     }
 
-    const currMousePos = {
-        x: evt.clientX,
-        y: evt.clientY,
+    const x = (evt.clientX - 360) / 8;
+    const y = -(evt.clientY - 250) / 8;
+    const z = 0.1;
+
+    props.pointLight.position.set(x, y, z);
+
+    simulator.startPos = {
+        x: x,
+        y: y,
+        z: z,
     };
 
-    const mousePosDiff = {
-        x: currMousePos.x - props.lastMousePos.x,
-        y: currMousePos.y - props.lastMousePos.y,
-    };
-
-    const distXZ = Math.sqrt(props.cameraPos.x * props.cameraPos.x + props.cameraPos.z * props.cameraPos.z);
-    const dist = Math.sqrt(distXZ * distXZ + props.cameraPos.y * props.cameraPos.y);
-
-    const currXZAngle = Math.atan2(props.cameraPos.z, props.cameraPos.x);
-    const newXZAngle = currXZAngle + mousePosDiff.x / 57.3;
-    const currYAngle = Math.atan2(props.cameraPos.y, distXZ);
-    const newYAngle = currYAngle + mousePosDiff.y / 57.3;
-
-    props.cameraPos.x = dist * Math.cos(newYAngle) * Math.cos(newXZAngle);
-    props.cameraPos.z = dist * Math.cos(newYAngle) * Math.sin(newXZAngle);
-    props.cameraPos.y = dist * Math.sin(newYAngle);
-
-    props.camera.position.set(props.cameraPos.x, props.cameraPos.y, props.cameraPos.z);
-    props.camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-    props.lastMousePos = currMousePos;
+    // const currMousePos = {
+    //     x: evt.clientX,
+    //     y: evt.clientY,
+    // };
+    //
+    // const mousePosDiff = {
+    //     x: currMousePos.x - props.lastMousePos.x,
+    //     y: currMousePos.y - props.lastMousePos.y,
+    // };
+    //
+    // const distXZ = Math.sqrt(props.cameraPos.x * props.cameraPos.x + props.cameraPos.z * props.cameraPos.z);
+    // const dist = Math.sqrt(distXZ * distXZ + props.cameraPos.y * props.cameraPos.y);
+    //
+    // const currXZAngle = Math.atan2(props.cameraPos.z, props.cameraPos.x);
+    // const newXZAngle = currXZAngle + mousePosDiff.x / 57.3;
+    // const currYAngle = Math.atan2(props.cameraPos.y, distXZ);
+    // const newYAngle = currYAngle + mousePosDiff.y / 57.3;
+    //
+    // props.cameraPos.x = dist * Math.cos(newYAngle) * Math.cos(newXZAngle);
+    // props.cameraPos.z = dist * Math.cos(newYAngle) * Math.sin(newXZAngle);
+    // props.cameraPos.y = dist * Math.sin(newYAngle);
+    //
+    // props.camera.position.set(props.cameraPos.x, props.cameraPos.y, props.cameraPos.z);
+    // props.camera.lookAt(new THREE.Vector3(0, 0, 0));
+    //
+    // props.lastMousePos = currMousePos;
 }
 
 renderer.domElement.onmouseup = (evt) => {
     props.dragging = false;
+
+    props.pointLight.intensity = 0;
+
+    simulator.generateParticles = false;
 }
 
 function initCamera() {
@@ -184,8 +218,9 @@ function initObjects() {
     const smokeMaterial = new THREE.PointsMaterial({
         // color: 0xffffff,
         map: texture,
-        size: 2,
-        transparent: true
+        size: 4,
+        transparent: true,
+        opacity: 0.3,
     });
 
     const smokeParticleSystem = new THREE.Points(smokeParticles, smokeMaterial);
@@ -200,9 +235,9 @@ function initLight() {
     directionalLight.position.set(0, 30, 30);
     scene.add(directionalLight);
 
-    const pointLight = new THREE.PointLight(0x9977ff, 30, 500);
-    pointLight.position.set(0, 0, 0.1);
-    scene.add(pointLight);
+    props.pointLight = new THREE.PointLight(0x9977ff, 0, 500);
+    props.pointLight.position.set(0, 0, 0.1);
+    scene.add(props.pointLight);
 }
 
 function initControls() {

@@ -11,6 +11,14 @@ module.exports = class Simulator {
         this.airFriction = 0.1;
 
         this._currGenerated = 0;
+
+        this.startPos = {
+            x: 0,
+            y: 0,
+            z: 0,
+        };
+
+        this.generateParticles = false;
     }
 
     addObject(object) {
@@ -74,16 +82,35 @@ module.exports = class Simulator {
         this._smokeParticles.attributes.velocity.needsUpdate = true;
         this._smokeParticles.attributes.position.needsUpdate = true;
 
-        if (this._currGenerated < this._length) {
-            this._currGenerated += (Math.random() * 30 + 10);
-
-            if (this._currGenerated > this._length) {
-                this._currGenerated = this._length;
-            }
-        }
-
         const p = this._particles.attributes.position.array;
         const v = this._particles.attributes.velocity.array;
+
+        if (this.generateParticles) {
+            if (this._currGenerated < this._length) {
+                const lastParticleIndex = this._currGenerated;
+
+                this._currGenerated += Math.floor((Math.random() * 30 + 10));
+
+                // console.log(this.startPos);
+
+                if (this._currGenerated > this._length) {
+                    this._currGenerated = this._length;
+                }
+
+                console.log(this._currGenerated - lastParticleIndex);
+
+                for (let i = lastParticleIndex; i < this._currGenerated; i++) {
+                    // console.log(i);
+                    // console.log(this.startPos.x);
+                    p[i * 3] = this.startPos.x;
+                    p[i * 3 + 1] = this.startPos.y;
+                    p[i * 3 + 2] = this.startPos.z;
+                    // p[i * 3 + 3] = this.startPos.x;
+                    // p[i * 3 + 4] = this.startPos.y;
+                    // p[i * 3 + 5] = this.startPos.z;
+                }
+            }
+        }
 
         for (let i = 0; i < this._currGenerated; i += 2) {
             // for (let j = SEG_LEN - 1; j >= 1; j--) {
