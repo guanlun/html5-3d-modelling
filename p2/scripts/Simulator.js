@@ -33,29 +33,59 @@ module.exports = class Simulator {
         this._particles = particles;
 
         this._length = particles.attributes.position.array.length / 3;
-        console.log(this._length);
-        // this._length = particles.vertices.length / SEG_LEN;
 
-        this._particleVel = [];
+        const velocities = particles.attributes.velocity.array;
 
         for (let i = 0; i < this._length; i++) {
-            const x = (Math.random() * 0.5);
-            const y = (Math.random() * 0.5);
-            const z = (Math.random() * 0.5);
-            this._particleVel.push([x, y, z]);
+            const x = (Math.random() * 0.1 - 0.05);
+            const y = (Math.random() * 0.25);
+            const z = (Math.random() * 0.05 + 0.05);
+
+            velocities[i * 3] = x;
+            velocities[i * 3 + 1] = y;
+            velocities[i * 3 + 2] = z;
+        }
+    }
+
+    setSmokeParticles(smokeParticles) {
+        this._smokeParticles = smokeParticles;
+
+        // this._smokeLength = smokeParticles.attributes.position.array.length / 3;
+
+        const sv = smokeParticles.attributes.velocity.array;
+
+        for (let i = 0; i < 100; i++) {
+            sv[i * 3] = Math.random() * 0.01 - 0.005;
+            sv[i * 3 + 1] = Math.random() * 0.05 + 0.05;
+            sv[i * 3 + 2] = 0;//Math.random() * 0.01 - 0.005;
         }
     }
 
     simulate(deltaT) {
-        // return;
+        const sp = this._smokeParticles.attributes.position.array;
+        const sv = this._smokeParticles.attributes.velocity.array;
+        // console.log(sp);
+        for (let i = 0; i < 100; i++) {
+            sp[i * 3] += sv[i * 3];
+            sp[i * 3 + 1] += sv[i * 3 + 1];
+            sp[i * 3 + 2] += sv[i * 3 + 2];
+        }
+
+        this._smokeParticles.attributes.velocity.needsUpdate = true;
+        this._smokeParticles.attributes.position.needsUpdate = true;
+
         if (this._currGenerated < this._length) {
-            this._currGenerated += (Math.random() * 10 + 20);
+            this._currGenerated += (Math.random() * 30 + 10);
 
             if (this._currGenerated > this._length) {
                 this._currGenerated = this._length;
             }
         }
-        for (let i = 0; i < this._currGenerated; i++) {
+
+        const p = this._particles.attributes.position.array;
+        const v = this._particles.attributes.velocity.array;
+
+        for (let i = 0; i < this._currGenerated; i += 2) {
             // for (let j = SEG_LEN - 1; j >= 1; j--) {
             //     let srcIdx;
             //
@@ -75,28 +105,30 @@ module.exports = class Simulator {
             //
             // const particle = this._particles.vertices[i * SEG_LEN];
             //
-            this._particleVel[i][1] -= 0.01;
+            // this._particleVel[i][1] -= 0.01;
             //
             // particle.x += this._particleVel[i][0];
             // particle.y += this._particleVel[i][1];
             // particle.z += this._particleVel[i][2];
 
-            const p = this._particles.attributes.position.array;
-            // console.log(p);
-            p[i * 3] += this._particleVel[i][0];
-            p[i * 3 + 1] += this._particleVel[i][1];
-            p[i * 3 + 2] += this._particleVel[i][2];
-            // console.log(p);
-            // console.log(this._particleVel[i]);
+            v[i * 3 + 1] -= 0.01;
 
-            this._particles.attributes.age.array[i] -= 0.01;
+            p[i * 3] = p[i * 3 + 3];
+            p[i * 3 + 1] = p[i * 3 + 4];
+            p[i * 3 + 2] = p[i * 3 + 5];
+
+            p[i * 3 + 3] += v[i * 3];
+            p[i * 3 + 4] += v[i * 3 + 1];
+            p[i * 3 + 5] += v[i * 3 + 2]
+
+            this._particles.attributes.age.array[i] += 0.002;
+            this._particles.attributes.age.array[i + 1] += 0.002;
         }
 
+        // console.log(this._particles.attributes.position.needsUpdate);
         this._particles.attributes.position.needsUpdate = true;
+        this._particles.attributes.velocity.needsUpdate = true;
         this._particles.attributes.age.needsUpdate = true;
-        // this.randColor = new THREE.Vector3(Math.random(), Math.random(), Math.random());
-        // this.shader.S
-        // this._particles.verticesNeedUpdate = true;
     }
 
     getCollisions() {

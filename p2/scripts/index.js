@@ -13,8 +13,8 @@ const props = {
 
     camera: null,
     cameraPos: {
-        x: 30,
-        y: 40,
+        x: 0,
+        y: 0,
         z: 40,
     },
 
@@ -115,66 +115,24 @@ function initCamera() {
     props.camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
-function initContainer(shape) {
+function initContainer() {
     simulator.clearStaticPlanes();
 
     const containerMaterial = new THREE.MeshPhongMaterial({
-        color: 0x6666ff,
-        specular: 0x000099,
-        transparent: true,
-        opacity: 0.3,
+        color: 0x666666,
+        specular: 0x666666,
+        transparent: false,
         side: THREE.DoubleSide,
     });
 
-    if (shape === 'box') {
-        scene.remove(props.cone);
+    scene.remove(props.cone);
 
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 0), new THREE.Vector3(0, 1, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 10, 0), new THREE.Vector3(0, -1, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(-10, 0, 0), new THREE.Vector3(1, 0, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(10, 0, 0), new THREE.Vector3(-1, 0, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, -10), new THREE.Vector3(0, 0, 1)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, 0, 10), new THREE.Vector3(0, 0, -1)));
+    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 0), new THREE.Vector3(0, 1, 0)));
 
-        const planeGeometry = new THREE.PlaneGeometry(20, 20);
-        const plane1 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane1.position.set(0, 0, 10);
-        scene.add(plane1);
-
-        const plane2 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane2.position.set(0, 0, -10);
-        scene.add(plane2);
-
-        const plane3 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane3.position.set(-10, 0, 0);
-        plane3.rotation.y = -Math.PI / 2;
-        scene.add(plane3);
-
-        const plane4 = new THREE.Mesh(planeGeometry, containerMaterial);
-        plane4.position.set(10, 0, 0);
-        plane4.rotation.y = -Math.PI / 2;
-        scene.add(plane4);
-
-        props.planes = [plane1, plane2, plane3, plane4];
-
-    } else if (shape === 'pyramid') {
-        props.planes.forEach(p => scene.remove(p));
-
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 0), new THREE.Vector3(0, 1, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(-10, -10, 0), new THREE.Vector3(0.866, -0.5, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(10, -10, 0), new THREE.Vector3(-0.866, -0.5, 0)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, -10), new THREE.Vector3(0, -0.5, 0.866)));
-        simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 10), new THREE.Vector3(0, -0.5, -0.866)));
-
-        const coneGeometry = new THREE.ConeGeometry(
-            7.07 * 2, 10 * 2, 4
-        );
-
-        props.cone = new THREE.Mesh(coneGeometry, containerMaterial);
-        props.cone.position.set(0, 0, 0);
-        props.cone.rotation.y = -Math.PI / 4;
-        scene.add(props.cone);
-    }
+    const planeGeometry = new THREE.PlaneGeometry(20, 20);
+    const plane1 = new THREE.Mesh(planeGeometry, containerMaterial);
+    // plane1.position.set(0, 0, 10);
+    scene.add(plane1);
 }
 
 function initForces() {
@@ -185,25 +143,16 @@ function initForces() {
 function initObjects() {
     const particles = new THREE.BufferGeometry();
 
-    const positions = new Float32Array(1000 * 3);
-    const ages = new Float32Array(1000);
+    const positions = new Float32Array(6000 * 3);
+    const velocities = new Float32Array(6000 * 3);
+    const ages = new Float32Array(6000);
 
-    for (let i = 0; i < 1000; i++) {
-        const x = 0; // Math.random() * 400 - 200;
-        const y = 0; // Math.random() * 400 - 200;
-        const z = 0; // Math.random() * 400 - 200;
-
-        // const particle = new THREE.Vector3(x, y, z);
-        // particles.vertices.push(particle);
-
-        positions[i * 3] = 0;
-        positions[i * 3 + 1] = 0;
-        positions[i * 3 + 2] = 0;
-
-        ages[i] = 1.0;
+    for (let i = 0; i < 6000; i++) {
+        ages[i] = 0.0;
     }
 
     particles.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particles.addAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
     particles.addAttribute('age', new THREE.BufferAttribute(ages, 1));
 
     simulator.setParticles(particles);
@@ -211,25 +160,36 @@ function initObjects() {
     const particleShader = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('vertexShader').textContent,
         fragmentShader: document.getElementById('fragmentShader').textContent,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        opacity: 0.75,
     });
 
-    // const particleMaterial = new THREE.LineBasicMaterial({
-    //     color: 0xff9900,
-    //     linewidth: 2,
-    //     blending: THREE.AdditiveBlending,
-    //     transparent: true,
-    //     opacity: 0.75,
-    // });
-
-    // const particleSystem = new THREE.LineSegments(particles, particleMaterial);
-    const particleSystem = new THREE.Points(particles, particleShader);
-    // const particleSystem = new THREE.Points(particles, new THREE.PointsMaterial({
-    //     color: 0xff0000,
-    // }));
-
-    // simulator.shader = particleShader;
-
+    const particleSystem = new THREE.LineSegments(particles, particleShader);
     scene.add(particleSystem);
+
+    const smokeParticles = new THREE.BufferGeometry();
+    const smokePositions = new Float32Array(100 * 3);
+    const smokeVelocities = new Float32Array(100 * 3);
+
+    smokeParticles.addAttribute('position', new THREE.BufferAttribute(smokePositions, 3));
+    smokeParticles.addAttribute('velocity', new THREE.BufferAttribute(smokeVelocities, 3));
+
+    simulator.setSmokeParticles(smokeParticles);
+
+    const textureLoader = new THREE.TextureLoader();
+
+    const texture = textureLoader.load('data:image/png;base64,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');
+
+    const smokeMaterial = new THREE.PointsMaterial({
+        // color: 0xffffff,
+        map: texture,
+        size: 2,
+        transparent: true
+    });
+
+    const smokeParticleSystem = new THREE.Points(smokeParticles, smokeMaterial);
+    scene.add(smokeParticleSystem);
 }
 
 function initLight() {
@@ -239,14 +199,14 @@ function initLight() {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight.position.set(0, 30, 30);
     scene.add(directionalLight);
+
+    const pointLight = new THREE.PointLight(0x9977ff, 30, 500);
+    pointLight.position.set(0, 0, 0.1);
+    scene.add(pointLight);
 }
 
 function initControls() {
     const controls = new UIControls();
-
-    controls.addListener('container-shape-changed', (shape) => {
-        initContainer(shape);
-    });
 
     controls.addListener('step-size-changed', val => {
         props.stepsPerFrame = val;
@@ -268,7 +228,7 @@ function initControls() {
 initCamera();
 initForces();
 initObjects();
-// initContainer('box');
+initContainer();
 initLight();
 initControls();
 

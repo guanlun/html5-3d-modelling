@@ -69,7 +69,7 @@
     </div>
 
     <!-- Shaders -->
-    <div id="vertexShader">
+    <div id="vertexShader" style="display:none;">
         attribute float age;
         varying float fAge;
 
@@ -82,15 +82,19 @@
         }
     </div>
 
-    <div id="fragmentShader">
+    <div id="fragmentShader" style="display:none;">
         varying float fAge;
         void main() {
-            gl_FragColor = vec4(fAge, fAge, fAge, fAge);
+            if (fAge < 0.1) {
+                gl_FragColor = vec4(1.0, (1.0 - fAge * 4.0), 1.0 - (fAge * 10.0), 1.0);
+            } else {
+                gl_FragColor = vec4(1.0 - fAge, (1.0 - fAge) * 0.6, 0, 0.75);
+            }
         }
     </div>
 
     <script src="scripts/jquery/jquery-3.1.0.min.js"></script>
-    <script src="scripts/three.js-master/build/three.js"></script>
+    <script src="scripts/three.js"></script>
 	<script src="scripts/bundle.js"></script>
 </body>
 </html>
