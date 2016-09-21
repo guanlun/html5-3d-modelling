@@ -11,6 +11,7 @@ module.exports = class Simulator {
         this.airFriction = 0.1;
 
         this._currGenerated = 0;
+        this._currSmokeGenerated = 0;
 
         this.startPos = {
             x: 0,
@@ -62,9 +63,9 @@ module.exports = class Simulator {
 
         const sv = smokeParticles.attributes.velocity.array;
 
-        for (let i = 0; i < 100; i++) {
-            sv[i * 3] = Math.random() * 0.01 - 0.005;
-            sv[i * 3 + 1] = Math.random() * 0.05 + 0.05;
+        for (let i = 0; i < 1000; i++) {
+            sv[i * 3] = Math.random() * 0.1 - 0.005;
+            sv[i * 3 + 1] = Math.random() * 0.3 + 0.05;
             sv[i * 3 + 2] = 0;//Math.random() * 0.01 - 0.005;
         }
     }
@@ -72,15 +73,43 @@ module.exports = class Simulator {
     simulate(deltaT) {
         const sp = this._smokeParticles.attributes.position.array;
         const sv = this._smokeParticles.attributes.velocity.array;
-        // console.log(sp);
-        for (let i = 0; i < 100; i++) {
+        const sa = this._smokeParticles.attributes.age.array;
+
+        if (this.generateParticles) {
+            if (this._currSmokeGenerated < 1000) {
+                const lastSmokeParticleIndex = this._currSmokeGenerated;
+
+                this._currSmokeGenerated += Math.floor((Math.random() * 20 + 10));
+
+                if (this._currSmokeGenerated > 1000) {
+                    this._currSmokeGenerated = 1000;
+                }
+
+                for (let i = lastSmokeParticleIndex; i < this._currGenerated; i++) {
+                    // console.log(i);
+                    // console.log(this.startPos.x);
+                    sp[i * 3] = this.startPos.x;
+                    sp[i * 3 + 1] = this.startPos.y;
+                    sp[i * 3 + 2] = this.startPos.z;
+                }
+            }
+        }
+
+        for (let i = 0; i < this._currSmokeGenerated; i++) {
             sp[i * 3] += sv[i * 3];
             sp[i * 3 + 1] += sv[i * 3 + 1];
             sp[i * 3 + 2] += sv[i * 3 + 2];
+
+            sa[i] += 0.01;
         }
 
         this._smokeParticles.attributes.velocity.needsUpdate = true;
         this._smokeParticles.attributes.position.needsUpdate = true;
+        this._smokeParticles.attributes.age.needsUpdate = true;
+
+
+
+
 
         const p = this._particles.attributes.position.array;
         const v = this._particles.attributes.velocity.array;
@@ -96,8 +125,6 @@ module.exports = class Simulator {
                 if (this._currGenerated > this._length) {
                     this._currGenerated = this._length;
                 }
-
-                console.log(this._currGenerated - lastParticleIndex);
 
                 for (let i = lastParticleIndex; i < this._currGenerated; i++) {
                     // console.log(i);
@@ -144,9 +171,9 @@ module.exports = class Simulator {
             p[i * 3 + 1] = p[i * 3 + 4];
             p[i * 3 + 2] = p[i * 3 + 5];
 
-            p[i * 3 + 3] += v[i * 3];
-            p[i * 3 + 4] += v[i * 3 + 1];
-            p[i * 3 + 5] += v[i * 3 + 2]
+            p[i * 3 + 3] += 2 * v[i * 3];
+            p[i * 3 + 4] += 2 * v[i * 3 + 1];
+            p[i * 3 + 5] += 2 * v[i * 3 + 2];
 
             this._particles.attributes.age.array[i] += 0.002;
             this._particles.attributes.age.array[i + 1] += 0.002;

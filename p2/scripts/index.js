@@ -15,7 +15,7 @@ const props = {
     cameraPos: {
         x: 0,
         y: 0,
-        z: 40,
+        z: 20,
     },
 
     gravity: null,
@@ -64,8 +64,8 @@ renderer.domElement.onmousedown = (evt) => {
 
     props.pointLight.intensity = 50;
 
-    const x = (evt.clientX - 360) / 8;
-    const y = -(evt.clientY - 250) / 8;
+    const x = (evt.clientX - 360) / 14;
+    const y = -(evt.clientY - 250) / 14;
     const z = 0.1;
 
     props.pointLight.position.set(x, y, z);
@@ -89,8 +89,8 @@ renderer.domElement.onmousemove = (evt) => {
         return;
     }
 
-    const x = (evt.clientX - 360) / 8;
-    const y = -(evt.clientY - 250) / 8;
+    const x = (evt.clientX - 360) / 14;
+    const y = -(evt.clientY - 250) / 14;
     const z = 0.1;
 
     props.pointLight.position.set(x, y, z);
@@ -203,11 +203,17 @@ function initObjects() {
     scene.add(particleSystem);
 
     const smokeParticles = new THREE.BufferGeometry();
-    const smokePositions = new Float32Array(100 * 3);
-    const smokeVelocities = new Float32Array(100 * 3);
+    const smokePositions = new Float32Array(1000 * 3);
+    const smokeVelocities = new Float32Array(1000 * 3);
+    const smokeAges = new Float32Array(1000);
+
+    for (let i = 0; i < 1000; i++) {
+        smokeAges[i] = 0.0;
+    }
 
     smokeParticles.addAttribute('position', new THREE.BufferAttribute(smokePositions, 3));
     smokeParticles.addAttribute('velocity', new THREE.BufferAttribute(smokeVelocities, 3));
+    smokeParticles.addAttribute('age', new THREE.BufferAttribute(smokeAges, 1));
 
     simulator.setSmokeParticles(smokeParticles);
 
@@ -220,10 +226,22 @@ function initObjects() {
         map: texture,
         size: 4,
         transparent: true,
-        opacity: 0.3,
     });
 
-    const smokeParticleSystem = new THREE.Points(smokeParticles, smokeMaterial);
+    const smokeShader = new THREE.ShaderMaterial({
+        vertexShader: document.getElementById('smokeVertexShader').textContent,
+        fragmentShader: document.getElementById('smokeFragmentShader').textContent,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        uniforms: {
+            texture1: {
+                type: 't',
+                value: texture,
+            }
+        }
+    });
+
+    const smokeParticleSystem = new THREE.Points(smokeParticles, smokeShader);
     scene.add(smokeParticleSystem);
 }
 
