@@ -64,8 +64,8 @@ module.exports = class Simulator {
         const sv = smokeParticles.attributes.velocity.array;
 
         for (let i = 0; i < 1000; i++) {
-            sv[i * 3] = Math.random() * 0.1 - 0.005;
-            sv[i * 3 + 1] = Math.random() * 0.3 + 0.05;
+            sv[i * 3] = Math.random() * 0.01 - 0.005;
+            sv[i * 3 + 1] = Math.random() * 0.03 + 0.05;
             sv[i * 3 + 2] = 0;//Math.random() * 0.01 - 0.005;
         }
     }
@@ -79,7 +79,7 @@ module.exports = class Simulator {
             if (this._currSmokeGenerated < 1000) {
                 const lastSmokeParticleIndex = this._currSmokeGenerated;
 
-                this._currSmokeGenerated += Math.floor((Math.random() * 20 + 10));
+                this._currSmokeGenerated += Math.floor((Math.random() * 5 + 3));
 
                 if (this._currSmokeGenerated > 1000) {
                     this._currSmokeGenerated = 1000;
