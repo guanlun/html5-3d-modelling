@@ -1,9 +1,6 @@
-const Force = require('./Force');
-const Gravity = require('./Gravity');
-const AirFriction = require('./AirFriction');
+const Constants = require('./Constants');
 const Simulator = require('./Simulator');
 const StaticPlane = require('./StaticPlane');
-const SphereObject = require('./SphereObject');
 const UIControls = require('./UIControls');
 
 const scene = new THREE.Scene();
@@ -157,7 +154,6 @@ function initContainer() {
 
     const texture = textureLoader.load('img/metal.jpg');
     const nrmTexture = textureLoader.load('img/metal_NRM.jpg');
-    const dispTexture = textureLoader.load('img/metal_DISP.jpg');
     const specTexture = textureLoader.load('img/metal_SPEC.jpg');
 
     const containerMaterial = new THREE.MeshPhongMaterial({
@@ -166,7 +162,7 @@ function initContainer() {
         transparent: false,
         map: texture,
         normalMap: nrmTexture,
-        normalScale: {x: 0.2, y: 0.2},
+        normalScale: {x: 0.1, y: 0.1},
         specularMap:  specTexture,
     });
 
@@ -180,25 +176,23 @@ function initContainer() {
     scene.add(plane1);
 }
 
-function initForces() {
-    props.gravity = new Gravity();
-    props.airFriction = new AirFriction();
-}
-
 function initObjects() {
     const particles = new THREE.BufferGeometry();
 
-    const positions = new Float32Array(6000 * 3);
-    const velocities = new Float32Array(6000 * 3);
-    const ages = new Float32Array(6000);
+    const positions = new Float32Array(Constants.SMOKE.PARTICLE_NUM * 3);
+    const velocities = new Float32Array(Constants.SMOKE.PARTICLE_NUM * 3);
+    const ages = new Float32Array(Constants.SMOKE.PARTICLE_NUM);
+    const states = new Float32Array(Constants.SMOKE.PARTICLE_NUM);
 
-    for (let i = 0; i < 6000; i++) {
+    for (let i = 0; i < Constants.SMOKE.PARTICLE_NUM; i++) {
+        states[i] = 0.0;
         ages[i] = 0.0;
     }
 
     particles.addAttribute('position', new THREE.BufferAttribute(positions, 3));
     particles.addAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
     particles.addAttribute('age', new THREE.BufferAttribute(ages, 1));
+    particles.addAttribute('state', new THREE.BufferAttribute(states, 1));
 
     simulator.setParticles(particles);
 
@@ -214,17 +208,20 @@ function initObjects() {
     scene.add(particleSystem);
 
     const smokeParticles = new THREE.BufferGeometry();
-    const smokePositions = new Float32Array(1000 * 3);
-    const smokeVelocities = new Float32Array(1000 * 3);
-    const smokeAges = new Float32Array(1000);
+    const smokePositions = new Float32Array(Constants.SMOKE.PARTICLE_NUM * 3);
+    const smokeVelocities = new Float32Array(Constants.SMOKE.PARTICLE_NUM * 3);
+    const smokeAges = new Float32Array(Constants.SMOKE.PARTICLE_NUM);
+    const smokeStates = new Float32Array(Constants.SMOKE.PARTICLE_NUM);
 
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < Constants.SMOKE.PARTICLE_NUM; i++) {
+        smokeStates[i] = 0.0;
         smokeAges[i] = 0.0;
     }
 
     smokeParticles.addAttribute('position', new THREE.BufferAttribute(smokePositions, 3));
     smokeParticles.addAttribute('velocity', new THREE.BufferAttribute(smokeVelocities, 3));
     smokeParticles.addAttribute('age', new THREE.BufferAttribute(smokeAges, 1));
+    smokeParticles.addAttribute('state', new THREE.BufferAttribute(smokeStates, 1));
 
     simulator.setSmokeParticles(smokeParticles);
 
@@ -259,10 +256,11 @@ function initLight() {
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(0, 30, 30);
+    directionalLight.position.set(0, 0, 30);
+    // directionalLight.intensity = 1.0;
     scene.add(directionalLight);
 
-    props.pointLight = new THREE.PointLight(0x9977ff, 0, 500);
+    props.pointLight = new THREE.PointLight(0x7777ff, 0, 500);
     props.pointLight.position.set(0, 0, 0.1);
     scene.add(props.pointLight);
 }
@@ -288,7 +286,6 @@ function initControls() {
 }
 
 initCamera();
-initForces();
 initObjects();
 initContainer();
 initLight();
@@ -300,6 +297,10 @@ function simulate() {
     }
 
     simulator.refreshDispaly();
+
+    if (props.pointLight.intensity !== 0) {
+        props.pointLight.intensity = Math.random() * 160 + 60;
+    }
 
     renderer.render(scene, props.camera);
 

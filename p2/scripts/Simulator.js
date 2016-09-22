@@ -1,4 +1,4 @@
-const SEG_LEN = 4;
+const Constants = require('./Constants');
 
 module.exports = class Simulator {
     constructor() {
@@ -40,149 +40,114 @@ module.exports = class Simulator {
 
     setParticles(particles) {
         this._particles = particles;
-
-        this._length = particles.attributes.position.array.length / 3;
-
-        const velocities = particles.attributes.velocity.array;
-
-        for (let i = 0; i < this._length; i++) {
-            const x = (Math.random() * 0.1 - 0.05);
-            const y = (Math.random() * 0.25);
-            const z = (Math.random() * 0.05 + 0.05);
-
-            velocities[i * 3] = x;
-            velocities[i * 3 + 1] = y;
-            velocities[i * 3 + 2] = z;
-        }
     }
 
     setSmokeParticles(smokeParticles) {
         this._smokeParticles = smokeParticles;
-
-        // this._smokeLength = smokeParticles.attributes.position.array.length / 3;
-
-        const sv = smokeParticles.attributes.velocity.array;
-
-        for (let i = 0; i < 1000; i++) {
-            sv[i * 3] = Math.random() * 0.01 - 0.005;
-            sv[i * 3 + 1] = Math.random() * 0.03 + 0.05;
-            sv[i * 3 + 2] = 0;//Math.random() * 0.01 - 0.005;
-        }
     }
 
     simulate(deltaT) {
         const sp = this._smokeParticles.attributes.position.array;
         const sv = this._smokeParticles.attributes.velocity.array;
         const sa = this._smokeParticles.attributes.age.array;
+        const ss = this._smokeParticles.attributes.state.array;
 
         if (this.generateParticles) {
-            if (this._currSmokeGenerated < 1000) {
-                const lastSmokeParticleIndex = this._currSmokeGenerated;
+            const lastSmokeParticleIndex = this._currSmokeGenerated;
 
-                this._currSmokeGenerated += Math.floor((Math.random() * 5 + 3));
+            this._currSmokeGenerated += Math.floor((Math.random() * 5 + 3));
 
-                if (this._currSmokeGenerated > 1000) {
-                    this._currSmokeGenerated = 1000;
-                }
+            for (let i = lastSmokeParticleIndex; i < this._currSmokeGenerated; i++) {
+                const idx = i % Constants.SMOKE.PARTICLE_NUM;
+                ss[idx] = 1;
+                sa[idx] = 0;
 
-                for (let i = lastSmokeParticleIndex; i < this._currGenerated; i++) {
-                    // console.log(i);
-                    // console.log(this.startPos.x);
-                    sp[i * 3] = this.startPos.x;
-                    sp[i * 3 + 1] = this.startPos.y;
-                    sp[i * 3 + 2] = this.startPos.z;
-                }
+                sp[idx * 3] = this.startPos.x;
+                sp[idx * 3 + 1] = this.startPos.y;
+                sp[idx * 3 + 2] = this.startPos.z;
+
+                sv[i * 3] = Math.random() * 0.01 - 0.005;
+                sv[i * 3 + 1] = Math.random() * 0.03 + 0.05;
+                sv[i * 3 + 2] = 0;
             }
         }
 
-        for (let i = 0; i < this._currSmokeGenerated; i++) {
-            sp[i * 3] += sv[i * 3];
-            sp[i * 3 + 1] += sv[i * 3 + 1];
-            sp[i * 3 + 2] += sv[i * 3 + 2];
+        for (let i = 0; i < Constants.SMOKE.PARTICLE_NUM; i++) {
+            if (ss[i] === 1) {
 
-            sa[i] += 0.01;
+                sp[i * 3] += sv[i * 3];
+                sp[i * 3 + 1] += sv[i * 3 + 1];
+                sp[i * 3 + 2] += sv[i * 3 + 2];
+
+                sa[i] += 0.01;
+
+                if (sa[i] > 10) {
+                    // Recycle particles if the age is too large
+                    sa[i] = 0;
+                    ss[i] = 0;
+                }
+            }
         }
 
         this._smokeParticles.attributes.velocity.needsUpdate = true;
         this._smokeParticles.attributes.position.needsUpdate = true;
         this._smokeParticles.attributes.age.needsUpdate = true;
-
-
+        this._smokeParticles.attributes.state.needsUpdate = true;
 
 
 
         const p = this._particles.attributes.position.array;
         const v = this._particles.attributes.velocity.array;
+        const a = this._particles.attributes.age.array;
+        const s = this._particles.attributes.state.array;
 
         if (this.generateParticles) {
-            if (this._currGenerated < this._length) {
-                const lastParticleIndex = this._currGenerated;
+            const lastParticleIndex = this._currGenerated;
 
-                this._currGenerated += Math.floor((Math.random() * 30 + 10));
+            this._currGenerated += Math.floor((Math.random() * 30 + 10));
 
-                // console.log(this.startPos);
+            for (let i = lastParticleIndex; i < this._currGenerated; i++) {
+                const idx = i % Constants.SPARK.PARTICLE_NUM;
+                s[idx] = 1;
+                a[idx] = 0;
 
-                if (this._currGenerated > this._length) {
-                    this._currGenerated = this._length;
-                }
+                p[idx * 3] = this.startPos.x;
+                p[idx * 3 + 1] = this.startPos.y;
+                p[idx * 3 + 2] = this.startPos.z;
 
-                for (let i = lastParticleIndex; i < this._currGenerated; i++) {
-                    // console.log(i);
-                    // console.log(this.startPos.x);
-                    p[i * 3] = this.startPos.x;
-                    p[i * 3 + 1] = this.startPos.y;
-                    p[i * 3 + 2] = this.startPos.z;
-                    // p[i * 3 + 3] = this.startPos.x;
-                    // p[i * 3 + 4] = this.startPos.y;
-                    // p[i * 3 + 5] = this.startPos.z;
+                v[idx * 3] = (Math.random() * 0.1 - 0.05);
+                v[idx * 3 + 1] = (Math.random() * 0.25);
+                v[idx * 3 + 2] = (Math.random() * 0.05 + 0.05);
+            }
+        }
+
+        for (let i = 0; i < Constants.SPARK.PARTICLE_NUM; i += 2) {
+            if (s[i] === 1) {
+                v[i * 3 + 1] -= 0.01;
+
+                p[i * 3] = p[i * 3 + 3];
+                p[i * 3 + 1] = p[i * 3 + 4];
+                p[i * 3 + 2] = p[i * 3 + 5];
+
+                p[i * 3 + 3] += 2 * v[i * 3];
+                p[i * 3 + 4] += 2 * v[i * 3 + 1];
+                p[i * 3 + 5] += 2 * v[i * 3 + 2];
+
+                a[i] += 0.002;
+                a[i + 1] += 0.002;
+
+                if (a[i] > 3) {
+                    // Recycle particles if the age is too large
+                    a[i] = 0;
+                    s[i] = 0;
                 }
             }
         }
 
-        for (let i = 0; i < this._currGenerated; i += 2) {
-            // for (let j = SEG_LEN - 1; j >= 1; j--) {
-            //     let srcIdx;
-            //
-            //     if (j == 1) {
-            //         srcIdx = 0;
-            //     } else {
-            //         srcIdx = j - 2;
-            //     }
-            //
-            //     const prevParticle = this._particles.vertices[i * SEG_LEN + j];
-            //     const srcParticle = this._particles.vertices[i * SEG_LEN + srcIdx];
-            //
-            //     prevParticle.x = srcParticle.x;
-            //     prevParticle.y = srcParticle.y;
-            //     prevParticle.z = srcParticle.z;
-            // }
-            //
-            // const particle = this._particles.vertices[i * SEG_LEN];
-            //
-            // this._particleVel[i][1] -= 0.01;
-            //
-            // particle.x += this._particleVel[i][0];
-            // particle.y += this._particleVel[i][1];
-            // particle.z += this._particleVel[i][2];
-
-            v[i * 3 + 1] -= 0.01;
-
-            p[i * 3] = p[i * 3 + 3];
-            p[i * 3 + 1] = p[i * 3 + 4];
-            p[i * 3 + 2] = p[i * 3 + 5];
-
-            p[i * 3 + 3] += 2 * v[i * 3];
-            p[i * 3 + 4] += 2 * v[i * 3 + 1];
-            p[i * 3 + 5] += 2 * v[i * 3 + 2];
-
-            this._particles.attributes.age.array[i] += 0.002;
-            this._particles.attributes.age.array[i + 1] += 0.002;
-        }
-
-        // console.log(this._particles.attributes.position.needsUpdate);
         this._particles.attributes.position.needsUpdate = true;
         this._particles.attributes.velocity.needsUpdate = true;
         this._particles.attributes.age.needsUpdate = true;
+        this._particles.attributes.state.needsUpdate = true;
     }
 
     getCollisions() {
