@@ -26,48 +26,6 @@
 	</style>
 </head>
 <body>
-    <div class="col-md-6 pull-right" id="ui-controls">
-        <div id="step-size-slider" class="row">
-            <div class="col-md-3">
-                Steps per frame
-            </div>
-            <div class="col-md-8">
-                <input type="range" min="1" max="5" step="1" value="1" />
-            </div>
-            <div class="col-md-1 val-display">1</div>
-        </div>
-
-        <div id="elasticity-slider" class="row">
-            <div class="col-md-3">
-                Elasticity
-            </div>
-            <div class="col-md-8">
-                <input type="range" min="0.1" max="0.9" step="0.1" value="0.5" />
-            </div>
-            <div class="col-md-1 val-display">0.5</div>
-        </div>
-
-        <div id="friction-coeff-slider" class="row">
-            <div class="col-md-3">
-                Friction Coefficient
-            </div>
-            <div class="col-md-8">
-                <input type="range" min="0.1" max="0.9" step="0.1" value="0.5" />
-            </div>
-            <div class="col-md-1 val-display">0.5</div>
-        </div>
-
-        <div id="air-friction-slider" class="row">
-            <div class="col-md-3">
-                Air Friction
-            </div>
-            <div class="col-md-8">
-                <input type="range" min="0" max="5" step="0.1" value="0.1" />
-            </div>
-            <div class="col-md-1 val-display">0.1</div>
-        </div>
-    </div>
-
     <!-- Shaders -->
     <div id="vertexShader" style="display:none;">
         attribute float age;
@@ -108,7 +66,7 @@
         void main() {
             fAge = age;
             fState = state;
-            gl_PointSize = 10.0 + 10.0 * age * age;
+            gl_PointSize = 10.0 + 15.0 * age * age;
             gl_Position = projectionMatrix *
                           modelViewMatrix *
                           vec4(position, 1.0);
@@ -127,7 +85,7 @@
                 return;
             }
             vec4 texColor = texture2D(texture1, gl_PointCoord);
-            gl_FragColor = vec4(texColor.xyz, texColor.w * (0.4 - 0.16 * fAge));
+            gl_FragColor = vec4(texColor.xyz, texColor.w * (0.4 - 0.3 * fAge));
         }
     </div>
 

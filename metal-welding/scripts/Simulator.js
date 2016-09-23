@@ -6,10 +6,6 @@ module.exports = class Simulator {
         this._staticPlanes = [];
         this._forces = [];
 
-        this.elasticity = 0.5;
-        this.frictionCoeff = 0.5;
-        this.airFriction = 0.1;
-
         this._currGenerated = 0;
         this._currSmokeGenerated = 0;
 
@@ -20,6 +16,8 @@ module.exports = class Simulator {
         };
 
         this.generateParticles = false;
+
+        this._vortices = [];
     }
 
     addObject(object) {
@@ -46,7 +44,40 @@ module.exports = class Simulator {
         this._smokeParticles = smokeParticles;
     }
 
-    simulate(deltaT) {
+    simulateVortices() {
+        if (this.generateParticles) {
+            if (Math.random() > 0.9) {
+                // Generate a vortex
+                const vortex = {
+                    pos: {
+                        x: this.startPos.x,
+                        y: this.startPos.y + 1,
+                        z: this.startPos.z,
+                    },
+                    vel: {
+                        x: Math.random() * 0.01 - 0.005,
+                        y: Math.random() * 0.03 + 0.05,
+                        z: 0,
+                    },
+                    radius: Math.random(),
+                    angularVel: Math.random(),
+                };
+
+                this._vortices.push(vortex);
+            }
+
+            for (let i = 0; i < this._vortices; i++) {
+                const vortex = this._vortices[i];
+                vortex.pos.x += vortex.vel.x;
+                vortex.pos.y += vortex.vel.y;
+                vortex.pos.z += vortex.vel.z;
+            }
+        }
+    }
+
+    simulate() {
+        this.simulateVortices();
+
         const sp = this._smokeParticles.attributes.position.array;
         const sv = this._smokeParticles.attributes.velocity.array;
         const sa = this._smokeParticles.attributes.age.array;
@@ -74,6 +105,27 @@ module.exports = class Simulator {
 
         for (let i = 0; i < Constants.SMOKE.PARTICLE_NUM; i++) {
             if (ss[i] === 1) {
+                for (let j = 0; j < this._vortices.length; j++) {
+                    const vortex = this._vortices[j];
+
+                    const diffX = sp[i * 3] - vortex.pos.x;
+                    const diffY = sp[i * 3 + 1] - vortex.pos.y;
+                    // const diffZ = sp[i * 3 + 2] - vortex.pos.z;
+
+                    const dist = Math.sqrt(diffX * diffX + diffY * diffY);
+
+                    if (dist < vortex.radius) {
+                        const p = 0.008 / (1 + dist * dist);
+                        const aVel = vortex.angularVel;
+
+                        sv[i * 3] += -p * diffY * aVel;
+                        sv[i * 3 + 1] += p * diffX * aVel;
+                    }
+                }
+
+                sv[i * 3] *= 0.999;
+                sv[i * 3 + 1] *= 0.999;
+                sv[i * 3 + 2] *= 0.999;
 
                 sp[i * 3] += sv[i * 3];
                 sp[i * 3 + 1] += sv[i * 3 + 1];

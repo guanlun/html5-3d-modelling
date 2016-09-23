@@ -1,9 +1,10 @@
 const Constants = require('./Constants');
 const Simulator = require('./Simulator');
 const StaticPlane = require('./StaticPlane');
-const UIControls = require('./UIControls');
-
 const scene = new THREE.Scene();
+
+const WIDTH = 1000;
+const HEIGHT = 600;
 
 const props = {
     stepsPerFrame: 1,
@@ -14,16 +15,6 @@ const props = {
         y: 0,
         z: 20,
     },
-
-    gravity: null,
-    airFriction: null,
-
-    planes: [],
-    cone: null,
-
-    ball1: null,
-    ball2: null,
-    ball3: null,
 
     dragging: false,
     lastMousePos: null,
@@ -39,13 +30,9 @@ const renderer = new THREE.WebGLRenderer({
 
 const textureLoader = new THREE.TextureLoader();
 
-renderer.setSize(720, 500);
+renderer.setSize(WIDTH, HEIGHT);
 renderer.setClearColor(0x000000, 1);
 document.body.appendChild(renderer.domElement);
-
-// const gl = renderer.domElement.getContext('webgl');
-//
-// console.log(gl);
 
 renderer.domElement.onwheel = (evt) => {
     evt.preventDefault(0);
@@ -140,7 +127,7 @@ renderer.domElement.onmouseup = (evt) => {
 function initCamera() {
     props.camera = new THREE.PerspectiveCamera(
         75,
-        720 / 500,
+        WIDTH / HEIGHT,
         0.1,
         1000
     );
@@ -177,6 +164,7 @@ function initContainer() {
 }
 
 function initObjects() {
+
     const particles = new THREE.BufferGeometry();
 
     const positions = new Float32Array(Constants.SMOKE.PARTICLE_NUM * 3);
@@ -201,7 +189,6 @@ function initObjects() {
         fragmentShader: document.getElementById('fragmentShader').textContent,
         blending: THREE.AdditiveBlending,
         transparent: true,
-        opacity: 0.75,
     });
 
     const particleSystem = new THREE.LineSegments(particles, particleShader);
@@ -257,7 +244,6 @@ function initLight() {
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight.position.set(0, 0, 30);
-    // directionalLight.intensity = 1.0;
     scene.add(directionalLight);
 
     props.pointLight = new THREE.PointLight(0x7777ff, 0, 500);
@@ -265,31 +251,10 @@ function initLight() {
     scene.add(props.pointLight);
 }
 
-function initControls() {
-    const controls = new UIControls();
-
-    controls.addListener('step-size-changed', val => {
-        props.stepsPerFrame = val;
-    });
-
-    controls.addListener('elasticity-changed', val => {
-        simulator.elasticity = val;
-    });
-
-    controls.addListener('friction-coeff-changed', val => {
-        simulator.frictionCoeff = val;
-    });
-
-    controls.addListener('air-friction-changed', val => {
-        props.airFriction.setCoefficient(val);
-    });
-}
-
 initCamera();
 initObjects();
 initContainer();
 initLight();
-initControls();
 
 function simulate() {
     for (let i = 0; i < props.stepsPerFrame; i++) {
