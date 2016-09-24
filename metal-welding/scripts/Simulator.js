@@ -57,7 +57,7 @@ module.exports = class Simulator {
                         y: Math.random() * 0.03 + 0.05,
                         z: 0,
                     },
-                    radius: Math.random(),
+                    radius: Math.random() * 2,
                     angularVel: Math.random() * 2 - 1,
                 };
 
@@ -103,26 +103,26 @@ module.exports = class Simulator {
 
         for (let i = 0; i < Constants.SMOKE.PARTICLE_NUM; i++) {
             if (ss[i] === 1) {
-                // for (let j = 0; j < this._vortices.length; j++) {
-                //     const vortex = this._vortices[j];
-                //
-                //     const diffX = sp[i * 3] - vortex.pos.x;
-                //     const diffY = sp[i * 3 + 1] - vortex.pos.y;
-                //
-                //     const dist = Math.sqrt(diffX * diffX + diffY * diffY);
-                //
-                //     if (dist < vortex.radius) {
-                //         const p = 0.008 / (1 + dist * dist);
-                //         const aVel = vortex.angularVel;
-                //
-                //         sv[i * 3] += -p * diffY * aVel;
-                //         sv[i * 3 + 1] += p * diffX * aVel;
-                //     }
-                // }
+                for (let j = 0; j < this._vortices.length; j++) {
+                    const vortex = this._vortices[j];
 
-                sv[i * 3] *= 0.999;
-                sv[i * 3 + 1] *= 0.999;
-                sv[i * 3 + 2] *= 0.999;
+                    const diffX = sp[i * 3] - vortex.pos.x;
+                    const diffY = sp[i * 3 + 1] - vortex.pos.y;
+
+                    const dist = Math.sqrt(diffX * diffX + diffY * diffY);
+
+                    if (dist < vortex.radius) {
+                        const p = 0.008 / (1 + dist * dist);
+                        const aVel = vortex.angularVel;
+
+                        sv[i * 3] += -p * diffY * aVel;
+                        sv[i * 3 + 1] += p * diffX * aVel;
+                    }
+                }
+
+                sv[i * 3] *= 0.998;
+                sv[i * 3 + 1] *= 0.998;
+                sv[i * 3 + 2] *= 0.998;
 
                 sp[i * 3] += sv[i * 3];
                 sp[i * 3 + 1] += sv[i * 3 + 1];
@@ -142,7 +142,6 @@ module.exports = class Simulator {
         this._smokeParticles.attributes.position.needsUpdate = true;
         this._smokeParticles.attributes.age.needsUpdate = true;
         this._smokeParticles.attributes.state.needsUpdate = true;
-
 
 
         const p = this._particles.attributes.position.array;
@@ -216,11 +215,19 @@ module.exports = class Simulator {
 
                     if (d < 0 && lastD > 0) {
                         if (this._pointInTriangle(p[i * 3 + 3] - this.startPos.x, p[i + 3 + 4] - this.startPos.y, p[i * 3 + 5] - this.startPos.z, t.vertices)) {
-                            console.log('haha');
-                            console.log(t.vertices);
-                            v[i * 3] = Math.random() * 0.1 - 0.05;
-                            v[i * 3 + 1] = -0.7 * v[i * 3 + 1];
-                            v[i * 3 + 2] = Math.random() * 0.1 - 0.05;
+                            const dotVN = v[i * 3] * tn.x + v[i * 3 + 1] * tn.y + v[i * 3 + 2] * tn.z;
+
+                            const vNormalX = tn.x * dotVN;
+                            const vNormalY = tn.y * dotVN;
+                            const vNormalZ = tn.z * dotVN;
+
+                            const vTangentX = v[i * 3] - vNormalX;
+                            const vTangentY = v[i * 3 + 1] - vNormalY;
+                            const vTangentZ = v[i * 3 + 2] - vNormalZ;
+
+                            v[i * 3] = -vNormalX + vTangentX * Math.random();
+                            v[i * 3 + 1] = -vNormalY + vTangentY * Math.random();
+                            v[i * 3 + 2] = -vNormalZ + vTangentZ * Math.random();
                             a[i] = 0;
                             break;
                         }

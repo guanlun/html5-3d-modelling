@@ -30,6 +30,9 @@ const renderer = new THREE.WebGLRenderer({
     antialias: true,
 });
 
+const raycaster = new THREE.Raycaster();
+const mouseVec = new THREE.Vector2();
+
 const textureLoader = new THREE.TextureLoader();
 const objLoader = new THREE.OBJLoader();
 
@@ -37,7 +40,6 @@ objLoader.load('obj/welder.obj', obj => {
     obj.traverse(child => {
         if (child.type === 'Mesh') {
             const welder = child;
-            // welder.scale.set(4, 4, 4);
 
             welder.material = new THREE.MeshPhongMaterial({
                 color: 0x333333,
@@ -74,24 +76,50 @@ renderer.domElement.onwheel = (evt) => {
     props.camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
+function handleMousePos (evt) {
+    const x = (evt.clientX - 360) / 14;
+    const y = -(evt.clientY - 250) / 14;
+    const z = 0.1;
+
+    // simulator.startPos = {
+    //     x: x,
+    //     y: y,
+    //     z: z,
+    // };
+
+    mouseVec.x = (event.clientX / WIDTH) * 2 - 1;
+    mouseVec.y = -(event.clientY / HEIGHT) * 2 + 1;
+
+    // console.log(mouseVec);
+
+    raycaster.setFromCamera(mouseVec, props.camera);
+    const intersects = raycaster.intersectObjects(scene.children);
+    if (intersects.length > 0) {
+        // console.log(intersects[0].point);
+        const p = intersects[0].point;
+
+        const x = p.x;
+        const y = p.y;
+        const z = 0.1;
+
+        simulator.startPos = {
+            x: x,
+            y: y,
+            z: z,
+        };
+
+        props.pointLight.position.set(x, y, z);
+        props.welder.position.set(x, y, z);
+        simulator.setWelderPosition(x, y, z);
+    }
+}
+
 renderer.domElement.onmousedown = (evt) => {
     props.dragging = true;
 
     props.pointLight.intensity = 50;
 
-    const x = (evt.clientX - 360) / 14;
-    const y = -(evt.clientY - 250) / 14;
-    const z = 0.1;
-
-    props.pointLight.position.set(x, y, z);
-    props.welder.position.set(x, y, 0.5);
-    simulator.setWelderPosition(x, y, 0.5);
-
-    simulator.startPos = {
-        x: x,
-        y: y,
-        z: z,
-    };
+    handleMousePos(evt);
 
     simulator.generateParticles = true;
 }
@@ -101,19 +129,7 @@ renderer.domElement.onmousemove = (evt) => {
         return;
     }
 
-    const x = (evt.clientX - 360) / 14;
-    const y = -(evt.clientY - 250) / 14;
-    const z = 0.1;
-
-    props.pointLight.position.set(x, y, z);
-    props.welder.position.set(x, y, 0.5);
-    simulator.setWelderPosition(x, y, 0.5);
-
-    simulator.startPos = {
-        x: x,
-        y: y,
-        z: z,
-    };
+    handleMousePos(evt);
 }
 
 renderer.domElement.onmouseup = (evt) => {
