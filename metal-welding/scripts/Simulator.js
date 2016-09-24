@@ -4,6 +4,7 @@ module.exports = class Simulator {
     constructor() {
         this._objects = [];
         this._staticPlanes = [];
+        this._triangles = [];
         this._forces = [];
 
         this._currGenerated = 0;
@@ -18,22 +19,19 @@ module.exports = class Simulator {
         this.generateParticles = false;
 
         this._vortices = [];
+
+        this._lastPos = [];
     }
 
-    addObject(object) {
-        this._objects.push(object);
+    addTriangle(vertices, normal) {
+        this._triangles.push({
+            vertices: vertices,
+            normal: normal,
+        });
     }
 
-    getObjects() {
-        return this._objects;
-    }
-
-    addStaticPlane(so) {
-        this._staticPlanes.push(so);
-    }
-
-    clearStaticPlanes() {
-        this._staticPlanes = [];
+    setWelderPosition(pos) {
+        this._welderPosition = pos;
     }
 
     setParticles(particles) {
@@ -60,7 +58,7 @@ module.exports = class Simulator {
                         z: 0,
                     },
                     radius: Math.random(),
-                    angularVel: Math.random(),
+                    angularVel: Math.random() * 2 - 1,
                 };
 
                 this._vortices.push(vortex);
@@ -105,23 +103,22 @@ module.exports = class Simulator {
 
         for (let i = 0; i < Constants.SMOKE.PARTICLE_NUM; i++) {
             if (ss[i] === 1) {
-                for (let j = 0; j < this._vortices.length; j++) {
-                    const vortex = this._vortices[j];
-
-                    const diffX = sp[i * 3] - vortex.pos.x;
-                    const diffY = sp[i * 3 + 1] - vortex.pos.y;
-                    // const diffZ = sp[i * 3 + 2] - vortex.pos.z;
-
-                    const dist = Math.sqrt(diffX * diffX + diffY * diffY);
-
-                    if (dist < vortex.radius) {
-                        const p = 0.008 / (1 + dist * dist);
-                        const aVel = vortex.angularVel;
-
-                        sv[i * 3] += -p * diffY * aVel;
-                        sv[i * 3 + 1] += p * diffX * aVel;
-                    }
-                }
+                // for (let j = 0; j < this._vortices.length; j++) {
+                //     const vortex = this._vortices[j];
+                //
+                //     const diffX = sp[i * 3] - vortex.pos.x;
+                //     const diffY = sp[i * 3 + 1] - vortex.pos.y;
+                //
+                //     const dist = Math.sqrt(diffX * diffX + diffY * diffY);
+                //
+                //     if (dist < vortex.radius) {
+                //         const p = 0.008 / (1 + dist * dist);
+                //         const aVel = vortex.angularVel;
+                //
+                //         sv[i * 3] += -p * diffY * aVel;
+                //         sv[i * 3 + 1] += p * diffX * aVel;
+                //     }
+                // }
 
                 sv[i * 3] *= 0.999;
                 sv[i * 3 + 1] *= 0.999;
@@ -170,6 +167,10 @@ module.exports = class Simulator {
                 v[idx * 3] = (Math.random() * 0.1 - 0.05);
                 v[idx * 3 + 1] = (Math.random() * 0.25);
                 v[idx * 3 + 2] = (Math.random() * 0.05 + 0.05);
+
+                this._lastPos[idx * 3] = p[idx * 3];
+                this._lastPos[idx * 3 + 1] = p[idx * 3 + 1];
+                this._lastPos[idx * 3 + 2] = p[idx * 3 + 2];
             }
         }
 
@@ -188,7 +189,49 @@ module.exports = class Simulator {
                 a[i] += 0.002;
                 a[i + 1] += 0.002;
 
-                if (a[i] > 3) {
+                const lp = this._lastPos;
+
+                for (let ti = 0; ti < this._triangles.length; ti++) {
+                    const t = this._triangles[ti];
+
+                    // Any vertex on triangle
+                    const tv = t.vertices[0];
+                    const tp = {
+                        x: tv.x + this.startPos.x,
+                        y: tv.y + this.startPos.y,
+                        z: tv.z + this.startPos.z
+                    };
+                    const tn = t.normal;
+
+                    // point to point distance
+                    const diffX = p[i * 3 + 3] - tp.x;
+                    const diffY = p[i * 3 + 4] - tp.y;
+                    const diffZ = p[i * 3 + 5] - tp.z;
+                    const d = diffX * tn.x + diffY * tn.y + diffZ * tn.z;
+
+                    const lastDiffX = lp[i * 3 + 3] - tp.x;
+                    const lastDiffY = lp[i * 3 + 4] - tp.y;
+                    const lastDiffZ = lp[i * 3 + 5] - tp.z;
+                    const lastD = lastDiffX * tn.x + lastDiffY * tn.y + lastDiffZ * tn.z;
+
+                    if (d < 0 && lastD > 0) {
+                        if (this._pointInTriangle(p[i * 3 + 3] - this.startPos.x, p[i + 3 + 4] - this.startPos.y, p[i * 3 + 5] - this.startPos.z, t.vertices)) {
+                            console.log('haha');
+                            console.log(t.vertices);
+                            v[i * 3] = Math.random() * 0.1 - 0.05;
+                            v[i * 3 + 1] = -0.7 * v[i * 3 + 1];
+                            v[i * 3 + 2] = Math.random() * 0.1 - 0.05;
+                            a[i] = 0;
+                            break;
+                        }
+                    }
+                }
+
+                lp[i * 3 + 3] = p[i * 3 + 3];
+                lp[i * 3 + 4] = p[i * 3 + 4];
+                lp[i * 3 + 5] = p[i * 3 + 5];
+
+                if (a[i] > 1) {
                     // Recycle particles if the age is too large
                     a[i] = 0;
                     s[i] = 0;
@@ -200,6 +243,20 @@ module.exports = class Simulator {
         this._particles.attributes.velocity.needsUpdate = true;
         this._particles.attributes.age.needsUpdate = true;
         this._particles.attributes.state.needsUpdate = true;
+    }
+
+    _pointInTriangle(px, py, pz, vertices) {
+        const p1 = vertices[0];
+        const p2 = vertices[1];
+        const p3 = vertices[2];
+
+        const a = ((p2.z - p3.z) * (px - p3.x) + (p3.x - p2.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
+        const b = ((p3.z - p1.z) * (px - p3.x) + (p1.x - p3.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
+        const c = 1 - a - b;
+
+        // console.log(a, b, c);
+
+        return (a > 0) && (b > 0) && (c > 0);
     }
 
     getCollisions() {

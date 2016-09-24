@@ -20,6 +20,8 @@ const props = {
     lastMousePos: null,
 
     pointLight: null,
+
+    welder: null,
 }
 
 const simulator = new Simulator();
@@ -29,6 +31,32 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 const textureLoader = new THREE.TextureLoader();
+const objLoader = new THREE.OBJLoader();
+
+objLoader.load('obj/welder.obj', obj => {
+    obj.traverse(child => {
+        if (child.type === 'Mesh') {
+            const welder = child;
+            // welder.scale.set(4, 4, 4);
+
+            welder.material = new THREE.MeshPhongMaterial({
+                color: 0x333333,
+            });
+            scene.add(welder);
+
+            const welderGeometry = new THREE.Geometry().fromBufferGeometry(welder.geometry);
+            welderGeometry.faces.forEach(f => {
+                const v1 = welderGeometry.vertices[f.a];
+                const v2 = welderGeometry.vertices[f.b];
+                const v3 = welderGeometry.vertices[f.c];
+
+                simulator.addTriangle([v1, v2, v3], f.normal);
+            });
+
+            props.welder = welder;
+        }
+    });
+})
 
 renderer.setSize(WIDTH, HEIGHT);
 renderer.setClearColor(0x000000, 1);
@@ -56,6 +84,8 @@ renderer.domElement.onmousedown = (evt) => {
     const z = 0.1;
 
     props.pointLight.position.set(x, y, z);
+    props.welder.position.set(x, y, 0.5);
+    simulator.setWelderPosition(x, y, 0.5);
 
     simulator.startPos = {
         x: x,
@@ -64,11 +94,6 @@ renderer.domElement.onmousedown = (evt) => {
     };
 
     simulator.generateParticles = true;
-
-    // props.lastMousePos = {
-    //     x: evt.clientX,
-    //     y: evt.clientY,
-    // };
 }
 
 renderer.domElement.onmousemove = (evt) => {
@@ -81,39 +106,14 @@ renderer.domElement.onmousemove = (evt) => {
     const z = 0.1;
 
     props.pointLight.position.set(x, y, z);
+    props.welder.position.set(x, y, 0.5);
+    simulator.setWelderPosition(x, y, 0.5);
 
     simulator.startPos = {
         x: x,
         y: y,
         z: z,
     };
-
-    // const currMousePos = {
-    //     x: evt.clientX,
-    //     y: evt.clientY,
-    // };
-    //
-    // const mousePosDiff = {
-    //     x: currMousePos.x - props.lastMousePos.x,
-    //     y: currMousePos.y - props.lastMousePos.y,
-    // };
-    //
-    // const distXZ = Math.sqrt(props.cameraPos.x * props.cameraPos.x + props.cameraPos.z * props.cameraPos.z);
-    // const dist = Math.sqrt(distXZ * distXZ + props.cameraPos.y * props.cameraPos.y);
-    //
-    // const currXZAngle = Math.atan2(props.cameraPos.z, props.cameraPos.x);
-    // const newXZAngle = currXZAngle + mousePosDiff.x / 57.3;
-    // const currYAngle = Math.atan2(props.cameraPos.y, distXZ);
-    // const newYAngle = currYAngle + mousePosDiff.y / 57.3;
-    //
-    // props.cameraPos.x = dist * Math.cos(newYAngle) * Math.cos(newXZAngle);
-    // props.cameraPos.z = dist * Math.cos(newYAngle) * Math.sin(newXZAngle);
-    // props.cameraPos.y = dist * Math.sin(newYAngle);
-    //
-    // props.camera.position.set(props.cameraPos.x, props.cameraPos.y, props.cameraPos.z);
-    // props.camera.lookAt(new THREE.Vector3(0, 0, 0));
-    //
-    // props.lastMousePos = currMousePos;
 }
 
 renderer.domElement.onmouseup = (evt) => {
@@ -137,8 +137,6 @@ function initCamera() {
 }
 
 function initContainer() {
-    simulator.clearStaticPlanes();
-
     const texture = textureLoader.load('img/metal.jpg');
     const nrmTexture = textureLoader.load('img/metal_NRM.jpg');
     const specTexture = textureLoader.load('img/metal_SPEC.jpg');
@@ -155,11 +153,8 @@ function initContainer() {
 
     scene.remove(props.cone);
 
-    simulator.addStaticPlane(new StaticPlane(new THREE.Vector3(0, -10, 0), new THREE.Vector3(0, 1, 0)));
-
     const planeGeometry = new THREE.PlaneGeometry(20, 20);
     const plane1 = new THREE.Mesh(planeGeometry, containerMaterial);
-    // plane1.position.set(0, 0, 10);
     scene.add(plane1);
 }
 
