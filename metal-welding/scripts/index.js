@@ -76,26 +76,17 @@ renderer.domElement.onwheel = (evt) => {
     props.camera.lookAt(new THREE.Vector3(0, 0, 0));
 }
 
-function handleMousePos (evt) {
+function handleMousePos(evt) {
     const x = (evt.clientX - 360) / 14;
     const y = -(evt.clientY - 250) / 14;
     const z = 0.1;
 
-    // simulator.startPos = {
-    //     x: x,
-    //     y: y,
-    //     z: z,
-    // };
-
     mouseVec.x = (event.clientX / WIDTH) * 2 - 1;
     mouseVec.y = -(event.clientY / HEIGHT) * 2 + 1;
-
-    // console.log(mouseVec);
 
     raycaster.setFromCamera(mouseVec, props.camera);
     const intersects = raycaster.intersectObjects(scene.children);
     if (intersects.length > 0) {
-        // console.log(intersects[0].point);
         const p = intersects[0].point;
 
         const x = p.x;
@@ -271,8 +262,6 @@ function simulate() {
     for (let i = 0; i < props.stepsPerFrame; i++) {
         simulator.simulate(0.01 / props.stepsPerFrame);
     }
-
-    simulator.refreshDispaly();
 
     if (props.pointLight.intensity !== 0) {
         props.pointLight.intensity = Math.random() * 160 + 60;

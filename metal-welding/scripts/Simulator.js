@@ -3,9 +3,7 @@ const Constants = require('./Constants');
 module.exports = class Simulator {
     constructor() {
         this._objects = [];
-        this._staticPlanes = [];
         this._triangles = [];
-        this._forces = [];
 
         this._currGenerated = 0;
         this._currSmokeGenerated = 0;
@@ -49,7 +47,7 @@ module.exports = class Simulator {
                 const vortex = {
                     pos: {
                         x: this.startPos.x,
-                        y: this.startPos.y + 1,
+                        y: this.startPos.y + 1.5,
                         z: this.startPos.z,
                     },
                     vel: {
@@ -120,9 +118,9 @@ module.exports = class Simulator {
                     }
                 }
 
-                sv[i * 3] *= 0.998;
-                sv[i * 3 + 1] *= 0.998;
-                sv[i * 3 + 2] *= 0.998;
+                sv[i * 3] *= 0.995;
+                sv[i * 3 + 1] *= 0.995;
+                sv[i * 3 + 2] *= 0.995;
 
                 sp[i * 3] += sv[i * 3];
                 sp[i * 3 + 1] += sv[i * 3 + 1];
@@ -261,120 +259,6 @@ module.exports = class Simulator {
         const b = ((p3.z - p1.z) * (px - p3.x) + (p1.x - p3.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
         const c = 1 - a - b;
 
-        // console.log(a, b, c);
-
         return (a > 0) && (b > 0) && (c > 0);
-    }
-
-    getCollisions() {
-        let collisions = [];
-
-        const numObjs = this._objects.length;
-
-        for (let i = 0; i < numObjs; i++) {
-            const obj = this._objects[i];
-            if (!obj.lastState) {
-                continue;
-            }
-
-            const staticPlaneCollisions = this._getStaticPlaneCollisions(obj);
-
-            collisions = collisions.concat(staticPlaneCollisions);
-
-            for (let j = i + 1; j < numObjs; j++) {
-                const obj2 = this._objects[j];
-
-                const objDist = obj.pos.distanceTo(obj2.pos);
-                const lastObjDist = obj.lastState.pos.distanceTo(obj2.lastState.pos);
-
-                const collisionDistance = obj.radius + obj2.radius;
-
-                const collisionNormal = obj2.pos.clone().sub(obj.pos).normalize();
-
-                const lastPos = obj.lastState.pos;
-                const collisionFraction = ((lastObjDist - collisionDistance) / (lastObjDist - objDist));
-
-                if (lastObjDist >= collisionDistance && objDist < collisionDistance) {
-                    collisions.push({
-                        withPlane: false,
-                        object: obj,
-                        withObject: obj2,
-                        normal: collisionNormal,
-                        fraction: collisionFraction,
-                    });
-                }
-            }
-        }
-
-        return collisions;
-    }
-
-    checkResting(obj) {
-        obj.restingAgainst = null;
-
-        // check resting condition
-        this._staticPlanes.forEach(plane => {
-            if (plane.normal.y != 1) {
-                return;
-            }
-
-            const {
-                normal,
-            } = plane;
-
-            const normalVel = obj.vel.clone().multiplyScalar(obj.vel.dot(normal));
-
-            if (normalVel.y > 0.05) {
-                return;
-            }
-
-            const planeDist = obj.pos.y - obj.radius - plane.point.y;
-
-            if (planeDist > 0.05) {
-                return;
-            }
-
-            obj.restingAgainst = plane;
-        });
-    }
-
-    addForce(force) {
-        this._forces.push(force);
-    }
-
-    refreshDispaly() {
-        this._objects.forEach(obj => {
-            obj.updateGraphics();
-        });
-    }
-
-    _getStaticPlaneCollisions(obj) {
-        const collisions = [];
-        this._staticPlanes.forEach(plane => {
-            const {
-                point,
-                normal,
-            } = plane;
-
-            const objPlaneDist = obj.pos.clone().sub(point).dot(normal);
-            const lastObjPlaneDist = obj.lastState.pos.clone().sub(point).dot(normal);
-
-            if (objPlaneDist < obj.radius && lastObjPlaneDist > obj.radius) {
-                const d0 = lastObjPlaneDist - obj.radius;
-                const d1 = objPlaneDist - obj.radius;
-                const collisionFraction = d0 / (d0 - d1);
-
-                collisions.push({
-                    withPlane: true,
-                    normal: normal,
-                    object: obj,
-                    dist: objPlaneDist,
-                    lastDist: lastObjPlaneDist,
-                    fraction: collisionFraction,
-                });
-            }
-        });
-
-        return collisions;
     }
 }
