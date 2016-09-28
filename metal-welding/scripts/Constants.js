@@ -5,4 +5,7 @@ module.exports = {
     SPARK: {
         PARTICLE_NUM: 2000,
     },
+    VORTEX: {
+        PARTICLE_NUM: 20,
+    },
 }

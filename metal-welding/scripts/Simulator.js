@@ -7,6 +7,7 @@ module.exports = class Simulator {
 
         this._currGenerated = 0;
         this._currSmokeGenerated = 0;
+        this._currVortexGenerated = 0;
 
         this.startPos = {
             x: 0,
@@ -43,7 +44,8 @@ module.exports = class Simulator {
     simulateVortices() {
         if (this.generateParticles) {
             if (Math.random() > 0.9) {
-                // Generate a vortex
+                const vIndex = this._currVortexGenerated % Constants.VORTEX.PARTICLE_NUM;
+
                 const vortex = {
                     pos: {
                         x: this.startPos.x,
@@ -55,18 +57,34 @@ module.exports = class Simulator {
                         y: Math.random() * 0.03 + 0.05,
                         z: 0,
                     },
-                    radius: Math.random() * 2,
-                    angularVel: Math.random() * 2 - 1,
+                    radius: Math.random() * 1.5,
+                    angularVel: Math.random() * 1 - 0.5,
+                    age: 0,
+                    active: true,
                 };
 
-                this._vortices.push(vortex);
+                this._vortices[vIndex] = vortex;
+
+                this._currVortexGenerated++;
             }
 
-            for (let i = 0; i < this._vortices; i++) {
+            for (let i = 0; i < Constants.VORTEX.PARTICLE_NUM; i++) {
                 const vortex = this._vortices[i];
+
+                if (!vortex || !vortex.active) {
+                    continue;
+                }
+
                 vortex.pos.x += vortex.vel.x;
                 vortex.pos.y += vortex.vel.y;
                 vortex.pos.z += vortex.vel.z;
+
+                vortex.age += 0.01;
+
+                if (vortex.age >= 1) {
+                    vortex.age = 0;
+                    vortex.active = false;
+                }
             }
         }
     }
@@ -93,9 +111,9 @@ module.exports = class Simulator {
                 sp[idx * 3 + 1] = this.startPos.y;
                 sp[idx * 3 + 2] = this.startPos.z;
 
-                sv[i * 3] = Math.random() * 0.01 - 0.005;
-                sv[i * 3 + 1] = Math.random() * 0.03 + 0.05;
-                sv[i * 3 + 2] = 0;
+                sv[idx * 3] = Math.random() * 0.01 - 0.005;
+                sv[idx * 3 + 1] = Math.random() * 0.03 + 0.05;
+                sv[idx * 3 + 2] = 0;
             }
         }
 
@@ -118,7 +136,7 @@ module.exports = class Simulator {
                     }
                 }
 
-                sv[i * 3] *= 0.995;
+                sv[i * 3] *= 0.98;
                 sv[i * 3 + 1] *= 0.995;
                 sv[i * 3 + 2] *= 0.995;
 
@@ -183,58 +201,73 @@ module.exports = class Simulator {
                 p[i * 3 + 4] += 2 * v[i * 3 + 1];
                 p[i * 3 + 5] += 2 * v[i * 3 + 2];
 
+                const x = p[i * 3 + 3];
+                const y = p[i * 3 + 4];
+                const z = p[i * 3 + 5];
+
                 a[i] += 0.002;
                 a[i + 1] += 0.002;
 
                 const lp = this._lastPos;
 
-                for (let ti = 0; ti < this._triangles.length; ti++) {
-                    const t = this._triangles[ti];
+                const xr = x - this.startPos.x;
+                const yr = y - this.startPos.y;
+                const zr = z - this.startPos.z;
 
-                    // Any vertex on triangle
-                    const tv = t.vertices[0];
-                    const tp = {
-                        x: tv.x + this.startPos.x,
-                        y: tv.y + this.startPos.y,
-                        z: tv.z + this.startPos.z
-                    };
-                    const tn = t.normal;
+                // Check AABB before doing point-triangle collision detection
+                if (
+                    (xr > -1.25) && (xr < 1.25) &&
+                    (yr > -6) && (yr < 0) &&
+                    (zr > 0) && (zr < 6.5)
+                ) {
+                    for (let ti = 0; ti < this._triangles.length; ti++) {
+                        const t = this._triangles[ti];
 
-                    // point to point distance
-                    const diffX = p[i * 3 + 3] - tp.x;
-                    const diffY = p[i * 3 + 4] - tp.y;
-                    const diffZ = p[i * 3 + 5] - tp.z;
-                    const d = diffX * tn.x + diffY * tn.y + diffZ * tn.z;
+                        // Any vertex on triangle
+                        const tv = t.vertices[0];
+                        const tp = {
+                            x: tv.x + this.startPos.x,
+                            y: tv.y + this.startPos.y,
+                            z: tv.z + this.startPos.z
+                        };
+                        const tn = t.normal;
 
-                    const lastDiffX = lp[i * 3 + 3] - tp.x;
-                    const lastDiffY = lp[i * 3 + 4] - tp.y;
-                    const lastDiffZ = lp[i * 3 + 5] - tp.z;
-                    const lastD = lastDiffX * tn.x + lastDiffY * tn.y + lastDiffZ * tn.z;
+                        // point to point distance
+                        const diffX = x - tp.x;
+                        const diffY = y - tp.y;
+                        const diffZ = z - tp.z;
+                        const d = diffX * tn.x + diffY * tn.y + diffZ * tn.z;
 
-                    if (d < 0 && lastD > 0) {
-                        if (this._pointInTriangle(p[i * 3 + 3] - this.startPos.x, p[i + 3 + 4] - this.startPos.y, p[i * 3 + 5] - this.startPos.z, t.vertices)) {
-                            const dotVN = v[i * 3] * tn.x + v[i * 3 + 1] * tn.y + v[i * 3 + 2] * tn.z;
+                        const lastDiffX = lp[i * 3 + 3] - tp.x;
+                        const lastDiffY = lp[i * 3 + 4] - tp.y;
+                        const lastDiffZ = lp[i * 3 + 5] - tp.z;
+                        const lastD = lastDiffX * tn.x + lastDiffY * tn.y + lastDiffZ * tn.z;
 
-                            const vNormalX = tn.x * dotVN;
-                            const vNormalY = tn.y * dotVN;
-                            const vNormalZ = tn.z * dotVN;
+                        if (d < 0 && lastD > 0) {
+                            if (this._pointInTriangle(x - this.startPos.x, y - this.startPos.y, z - this.startPos.z, t.vertices)) {
+                                const dotVN = v[i * 3] * tn.x + v[i * 3 + 1] * tn.y + v[i * 3 + 2] * tn.z;
 
-                            const vTangentX = v[i * 3] - vNormalX;
-                            const vTangentY = v[i * 3 + 1] - vNormalY;
-                            const vTangentZ = v[i * 3 + 2] - vNormalZ;
+                                const vNormalX = tn.x * dotVN;
+                                const vNormalY = tn.y * dotVN;
+                                const vNormalZ = tn.z * dotVN;
 
-                            v[i * 3] = -vNormalX + vTangentX * Math.random();
-                            v[i * 3 + 1] = -vNormalY + vTangentY * Math.random();
-                            v[i * 3 + 2] = -vNormalZ + vTangentZ * Math.random();
-                            a[i] = 0;
-                            break;
+                                const vTangentX = v[i * 3] - vNormalX;
+                                const vTangentY = v[i * 3 + 1] - vNormalY;
+                                const vTangentZ = v[i * 3 + 2] - vNormalZ;
+
+                                v[i * 3] = -vNormalX + vTangentX * Math.random();
+                                v[i * 3 + 1] = -vNormalY + vTangentY * Math.random();
+                                v[i * 3 + 2] = -vNormalZ + vTangentZ * Math.random();
+                                a[i] = 0;
+                                break;
+                            }
                         }
                     }
                 }
 
-                lp[i * 3 + 3] = p[i * 3 + 3];
-                lp[i * 3 + 4] = p[i * 3 + 4];
-                lp[i * 3 + 5] = p[i * 3 + 5];
+                lp[i * 3 + 3] = x;
+                lp[i * 3 + 4] = y;
+                lp[i * 3 + 5] = z;
 
                 if (a[i] > 1) {
                     // Recycle particles if the age is too large
