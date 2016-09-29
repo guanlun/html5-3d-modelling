@@ -41,6 +41,12 @@ module.exports = class Simulator {
         this._smokeParticles = smokeParticles;
     }
 
+    simulate() {
+        this.simulateVortices();
+        this.simulateSmoke();
+        this.simulateSpark();
+    }
+
     simulateVortices() {
         if (this.generateParticles) {
             if (Math.random() > 0.9) {
@@ -89,9 +95,7 @@ module.exports = class Simulator {
         }
     }
 
-    simulate() {
-        this.simulateVortices();
-
+    simulateSmoke() {
         const sp = this._smokeParticles.attributes.position.array;
         const sv = this._smokeParticles.attributes.velocity.array;
         const sa = this._smokeParticles.attributes.age.array;
@@ -100,7 +104,7 @@ module.exports = class Simulator {
         if (this.generateParticles) {
             const lastSmokeParticleIndex = this._currSmokeGenerated;
 
-            this._currSmokeGenerated += Math.floor((Math.random() * 5 + 3));
+            this._currSmokeGenerated += Math.floor((Math.random() * 2 + 2));
 
             for (let i = lastSmokeParticleIndex; i < this._currSmokeGenerated; i++) {
                 const idx = i % Constants.SMOKE.PARTICLE_NUM;
@@ -121,6 +125,10 @@ module.exports = class Simulator {
             if (ss[i] === 1) {
                 for (let j = 0; j < this._vortices.length; j++) {
                     const vortex = this._vortices[j];
+
+                    if (!vortex.active) {
+                        continue;
+                    }
 
                     const diffX = sp[i * 3] - vortex.pos.x;
                     const diffY = sp[i * 3 + 1] - vortex.pos.y;
@@ -146,7 +154,7 @@ module.exports = class Simulator {
 
                 sa[i] += 0.01;
 
-                if (sa[i] > 10) {
+                if (sa[i] > 3) {
                     // Recycle particles if the age is too large
                     sa[i] = 0;
                     ss[i] = 0;
@@ -158,8 +166,9 @@ module.exports = class Simulator {
         this._smokeParticles.attributes.position.needsUpdate = true;
         this._smokeParticles.attributes.age.needsUpdate = true;
         this._smokeParticles.attributes.state.needsUpdate = true;
+    }
 
-
+    simulateSpark() {
         const p = this._particles.attributes.position.array;
         const v = this._particles.attributes.velocity.array;
         const a = this._particles.attributes.age.array;
