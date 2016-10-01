@@ -1,15 +1,18 @@
 const Utils = require('./Utils');
 
 const Sword = require('./Sword');
+const Spear = require('./Spear');
+const Shield = require('./Shield');
 
 const CROSS_SIZE = 5;
 
 module.exports = class Soldier {
-    constructor(x, y) {
+    constructor(x, y, weaponType) {
         this.attackInterval = 60;
         this.speedLimit = 1;
         this.dimension = 5;
-        this.attackRangeCoeff = 0.5;
+
+        this.hp = 100;
 
         this.position = {
             x: x,
@@ -34,9 +37,20 @@ module.exports = class Soldier {
         this.lastAttackFrame = 0;
         this.attackAnimationFrame = 0;
 
-        this.maxMovingSpeed = 1.2;
-
-        this.weapon = new Sword();
+        switch (weaponType) {
+            case 'sword':
+                this.weapon = new Sword();
+                this.maxMovingSpeed = 1.5;
+                break;
+            case 'spear':
+                this.weapon = new Spear();
+                this.maxMovingSpeed = 1.2;
+                break;
+            case 'shield':
+                this.weapon = new Shield();
+                this.maxMovingSpeed = 1.2;
+                break;
+        }
     }
 
     simulate(frame, friendly, enemy) {
@@ -44,20 +58,27 @@ module.exports = class Soldier {
             return;
         }
 
+        const target = this.findTarget(enemy.soldiers);
+
+        if (target === null) {
+            return;
+        }
+
+        const dist = this.distTo(target);
+        this.facing.x = (target.position.x - this.position.x) / dist;
+        this.facing.y = (target.position.y - this.position.y) / dist;
+
         if (this.state === 'moving') {
-            const target = this.findTarget(enemy.soldiers);
-            if (target === null) {
-                return;
-            }
-
-            const dist = this.distTo(target);
-
             this.target = target;
 
-            if (dist > 40 * this.attackRangeCoeff) {
-                this.facing.x = (target.position.x - this.position.x) / dist;
-                this.facing.y = (target.position.y - this.position.y) / dist;
+            let attackRange = dist;
 
+            if (target.state === 'backing-up') {
+                // Eneny backing-up, get closer before attacking
+                attackRange *= 0.5;
+            }
+
+            if (attackRange > this.weapon.length) {
                 this.velocity.x += this.facing.x * 0.1;
                 this.velocity.y += this.facing.y * 0.1;
 
@@ -71,8 +92,8 @@ module.exports = class Soldier {
                         return;
                     }
 
-                    this.velocity.x += 0.01 * (f.velocity.x - this.velocity.x);
-                    this.velocity.y += 0.01 * (f.velocity.y - this.velocity.y);
+                    // this.velocity.x += 0.01 * (f.velocity.x - this.velocity.x);
+                    // this.velocity.y += 0.01 * (f.velocity.y - this.velocity.y);
 
                     const xDiff = f.position.x - this.position.x;
                     const yDiff = f.position.y - this.position.y;
@@ -92,8 +113,18 @@ module.exports = class Soldier {
                 this.state = 'fighting';
             }
         } else if (this.state === 'fighting') {
-            const target = this.target;
+            if (target !== this.target) {
+                this.target = target;
+                this.state = 'moving';
+            }
 
+            if (dist > this.weapon.length) {
+                this.state = 'moving';
+            } else if (dist < this.weapon.minRange) {
+                this.state = 'backing-up';
+            }
+
+            // const target = this.target;
             if (target.alive) {
                 this.attack(target, frame);
             } else {
@@ -103,11 +134,23 @@ module.exports = class Soldier {
             }
 
             this.attackAnimationFrame++;
+        } else if (this.state === 'backing-up') {
+            if (dist > this.weapon.minRange) {
+                this.state = 'fighting';
+            }
+
+            this.position.x -= this.facing.x * 0.3;
+            this.position.y -= this.facing.y * 0.3;
         }
     }
 
-    receiveDamage(damage) {
-        this.alive = false;
+    handleAttack(attackWeapon, angle) {
+        const damage = this.weapon.defend(attackWeapon, angle);
+        this.hp -= damage;
+
+        if (this.hp <= 0) {
+            this.alive = false;
+        }
     }
 
     attack(target, frame) {

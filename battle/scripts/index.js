@@ -14,7 +14,25 @@ const state = {
 
 let frame = 0;
 
-let CurrSoldierCons = Soldier;
+let currSoliderType = 'sword';
+
+function loadPreset() {
+    state.redArmy.clear();
+    state.blueArmy.clear();
+
+    state.redArmy.addSoldier(new Soldier(200, 200, 'sword'));
+    state.redArmy.addSoldier(new Soldier(210, 250, 'sword'));
+    state.redArmy.addSoldier(new Soldier(205, 300, 'sword'));
+    state.redArmy.addSoldier(new Soldier(205, 350, 'sword'));
+    state.redArmy.addSoldier(new Soldier(205, 400, 'sword'));
+
+    state.blueArmy.addSoldier(new Soldier(500, 200, 'spear'));
+    state.blueArmy.addSoldier(new Soldier(500, 280, 'spear'));
+    state.blueArmy.addSoldier(new Soldier(500, 230, 'spear'));
+    state.blueArmy.addSoldier(new Soldier(400, 200, 'shield'));
+    state.blueArmy.addSoldier(new Soldier(400, 300, 'shield'));
+    state.blueArmy.addSoldier(new Soldier(400, 230, 'shield'));
+}
 
 function simulate() {
     if (state.simulating) {
@@ -54,12 +72,17 @@ clearButton.onclick = () => {
 const soldierSelect = document.getElementById('soldier-select');
 soldierSelect.onchange = (evt) => {
     if (soldierSelect.value === 'swordsman') {
-        CurrSoldierCons = Soldier;
+        currSoliderType = 'sword';
     } else if (soldierSelect.value === 'shieldman'){
-        CurrSoldierCons = ShieldMan;
+        currSoliderType = 'shield';
     } else {
-        CurrSoldierCons = SpearMan;
+        currSoliderType = 'spear';
     }
+}
+
+const presetButton = document.getElementById('preset-btn');
+presetButton.onclick = () => {
+    loadPreset();
 }
 
 canvas.onmouseup = (evt) => {
@@ -72,5 +95,5 @@ canvas.onmouseup = (evt) => {
     } else {
         selectedArmy = state.blueArmy;
     }
-    selectedArmy.addSoldier(new CurrSoldierCons(evt.offsetX, evt.offsetY));
+    selectedArmy.addSoldier(new Soldier(evt.offsetX, evt.offsetY, currSoliderType));
 }

@@ -2,12 +2,12 @@ const Utils = require('./Utils');
 
 const Constants = require('./Constants');
 
-module.exports = class Sword {
+module.exports = class Spear {
     constructor() {
-        this.length = 20;
-        this.damage = 30;
+        this.length = 60;
+        this.minRange = 40;
 
-        this.minRange = 0;
+        this.damage = 50;
 
         this.currAttackFrame = 0;
 
@@ -16,11 +16,11 @@ module.exports = class Sword {
             y: -5,
         };
 
-        this.offsetAngle = Math.PI / 4;
+        this.offsetPos = 20;
 
         this.status = 'holding';
 
-        this.type = 'sword';
+        this.type = 'spear';
     }
 
     attack(holder, target, facing) {
@@ -31,17 +31,26 @@ module.exports = class Sword {
         if (this.status === 'out') {
             this.currAttackFrame++;
 
-            const pointing = facing - this.offsetAngle;
+            if (this.currAttackFrame === 20) {
+                this.status = 'back';
+            }
 
-            const normalX = Math.cos(pointing);
-            const normalY = Math.sin(pointing);
+            this.offsetPos = 20 - this.currAttackFrame;
+
+            const reach = this.length - this.offsetPos;
+
+            // console.log(reach * Math.cos(facing), reach * Math.sin(facing));
+            const headPos = {
+                x: holder.position.x + reach * Math.sin(facing),
+                y: holder.position.y - reach * Math.cos(facing),
+            }
 
             const diff = {
                 x: target.position.x - holder.position.x,
                 y: target.position.y - holder.position.y,
             };
 
-            const dist = Math.abs(diff.x * normalX + diff.y * normalY);
+            const dist = Utils.dim(Utils.sub(headPos, target.position));
 
             if (dist < 5) {
                 this.status = 'back';
@@ -50,21 +59,11 @@ module.exports = class Sword {
                 const attackAngle = Utils.dot(combatDir, target.facing);
 
                 target.handleAttack(this, attackAngle);
-
-                // const rand = Math.random();
-                //
-                // if (attackAngle < -0.5) {
-                //     if (rand > 0.9) {
-                //         target.receiveDamage(this.damage);
-                //     }
-                // } else {
-                //     if (rand > 0.2) {
-                //         target.receiveDamage(this.damage);
-                //     }
-                // }
             }
         } else if (this.status === 'back') {
             this.currAttackFrame--;
+
+            this.offsetPos = 20 - this.currAttackFrame;
 
             if (this.currAttackFrame === 0) {
                 this.status = 'holding';
@@ -90,11 +89,13 @@ module.exports = class Sword {
         return 0;
     }
 
+
     render(ctx) {
 
-        this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
+        // this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
         ctx.save();
-        ctx.rotate(this.offsetAngle);
+        ctx.translate(0, this.offsetPos);
+        // ctx.rotate(this.offsetAngle);
 
         ctx.beginPath();
         ctx.moveTo(this.startPos.x, this.startPos.y);
