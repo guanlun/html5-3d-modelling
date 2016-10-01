@@ -1,24 +1,45 @@
 const Utils = require('./Utils');
 
+const Sword = require('./Sword');
+
+const CROSS_SIZE = 5;
+
 module.exports = class Soldier {
     constructor(x, y) {
+        this.attackInterval = 60;
+        this.speedLimit = 1;
+        this.dimension = 5;
+        this.attackRangeCoeff = 0.5;
+
         this.position = {
             x: x,
             y: y,
         };
 
         this.velocity = {
-            x: Math.random() * 1 - 0.5,
-            y: Math.random() * 1 - 0.5,
+            x: 0,
+            y: 0,
+        };
+
+        this.facing = {
+            x: 0,
+            y: -1,
         };
 
         this.state = 'moving';
         this.target = null;
 
         this.alive = true;
+
+        this.lastAttackFrame = 0;
+        this.attackAnimationFrame = 0;
+
+        this.maxMovingSpeed = 1.2;
+
+        this.weapon = new Sword();
     }
 
-    simulate(friendly, enemy) {
+    simulate(frame, friendly, enemy) {
         if (!this.alive) {
             return;
         }
@@ -33,9 +54,17 @@ module.exports = class Soldier {
 
             this.target = target;
 
-            if (dist > 24) {
-                this.velocity.x = (target.position.x - this.position.x) / dist;
-                this.velocity.y = (target.position.y - this.position.y) / dist;
+            if (dist > 40 * this.attackRangeCoeff) {
+                this.facing.x = (target.position.x - this.position.x) / dist;
+                this.facing.y = (target.position.y - this.position.y) / dist;
+
+                this.velocity.x += this.facing.x * 0.1;
+                this.velocity.y += this.facing.y * 0.1;
+
+                if (Utils.dim(this.velocity) > this.maxMovingSpeed) {
+                    this.velocity.x /= this.maxMovingSpeed;
+                    this.velocity.y /= this.maxMovingSpeed;
+                }
 
                 friendly.soldiers.forEach(f => {
                     if (f === this || !f.alive) {
@@ -50,35 +79,67 @@ module.exports = class Soldier {
 
                     const dist = Utils.distance(this.position, f.position);
 
-                    if (dist < 30) {
+                    if (dist < 10) {
                         this.velocity.x -= 2 / dist * xDiff;
                         this.velocity.y -= 2 / dist * yDiff;
                     }
                 });
 
-                Utils.normalize(this.velocity);
-
                 this.position.x += this.velocity.x;
                 this.position.y += this.velocity.y;
 
             } else {
-                this.velocity.x = 0;
-                this.velocity.y = 0;
-
                 this.state = 'fighting';
             }
         } else if (this.state === 'fighting') {
             const target = this.target;
 
             if (target.alive) {
-                if (Math.random() > 0.99) {
-                    target.alive = false;
+                this.attack(target, frame);
+            } else {
+                if (this.attackAnimationFrame >= this.attackInterval) {
                     this.state = 'moving';
                 }
-            } else {
-                this.state = 'moving';
             }
+
+            this.attackAnimationFrame++;
         }
+    }
+
+    receiveDamage(damage) {
+        this.alive = false;
+    }
+
+    attack(target, frame) {
+        const facing = Math.atan2(this.facing.y, this.facing.x) + Math.PI / 2;
+
+        this.weapon.attack(this, target, facing);
+        // if (frame - this.lastAttackFrame > this.attackInterval) {
+        //     this.attackAnimationFrame = 0;
+        //     this.lastAttackFrame = frame;
+        // } else {
+        //     if (this.attackAnimationFrame === this.attackInterval / 2) {
+        //         target.respondToAttack(this);
+        //     }
+        // }
+    }
+
+    respondToAttack(attacker) {
+        let survivalRate;
+        if (this.target === attacker) {
+            // Focusing on the attacker
+            survivalRate = 0.9;
+        } else {
+            // Fighting someone else, more likely to be killed
+            survivalRate = 0.2;
+        }
+
+        if (Math.random() > survivalRate) {
+            this.alive = false;
+        }
+
+        this.velocity.x = 0;
+        this.velocity.y = 0;
     }
 
     render(ctx, color) {
@@ -87,25 +148,51 @@ module.exports = class Soldier {
         ctx.fillStyle = color;
         ctx.strokeStyle = color;
 
+        ctx.save();
+
+        const facing = Math.atan2(this.facing.y, this.facing.x) + Math.PI / 2;
+        ctx.translate(x, y);
+        ctx.rotate(facing);
+
         ctx.beginPath();
         if (this.alive) {
-            if (this.state === 'fighting') {
-                ctx.globalAlpha = 1;
-            } else {
-                ctx.globalAlpha = 0.5;
-            }
-            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            // if (this.state === 'fighting') {
+            //     ctx.globalAlpha = 1;
+            // } else {
+            //     ctx.globalAlpha = 0.5;
+            // }
+            ctx.arc(0, 0, this.dimension, 0, Math.PI * 2);
             ctx.fill();
+
+            this.weapon.render(ctx);
+
+            // ctx.beginPath();
+            // ctx.moveTo(2, -5);
+            //
+            // let weaponPos;
+            //
+            // if (this.attackAnimationFrame <= this.attackInterval / 2) {
+            //     weaponPos = this.attackAnimationFrame * this.attackRangeCoeff;
+            // } else {
+            //     weaponPos = (this.attackInterval - this.attackAnimationFrame) * this.attackRangeCoeff;
+            // }
+            //
+            // ctx.lineTo(2, -8 - weaponPos);
+            // ctx.closePath();
+            //
+            // ctx.stroke();
         } else {
-            ctx.moveTo(x - 8, y - 8);
-            ctx.lineTo(x + 8, y + 8);
+            ctx.moveTo(-CROSS_SIZE, -CROSS_SIZE);
+            ctx.lineTo(CROSS_SIZE, CROSS_SIZE);
             ctx.closePath();
 
-            ctx.moveTo(x - 8, y + 8);
-            ctx.lineTo(x + 8, y - 8);
+            ctx.moveTo(-CROSS_SIZE, CROSS_SIZE);
+            ctx.lineTo(CROSS_SIZE, -CROSS_SIZE);
             ctx.closePath();
             ctx.stroke();
         }
+
+        ctx.restore();
     }
 
     distTo(soldier) {

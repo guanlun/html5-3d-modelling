@@ -6,14 +6,16 @@
 		body { margin: 0; }
 	</style>
 </head>
-<body>
+<body oncontextmenu="return false;">
     <div id="controls">
         <button id="start-btn">Start</button>
+        <button id="pause-btn">Pause</button>
         <button id="clear-btn">Clear</button>
-        <select id="army-toggle">
-            <option>red</option>
-            <option>blue</option>
-        </select>
+        <select id="soldier-select">
+            <option>swordsman</option>
+            <option>spearman</option>
+            <option>shieldman</option>
+        </selecT>
     </div>
 
     <canvas id="canvas" width="1200" height="800"></canvas>

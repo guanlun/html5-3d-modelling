@@ -1,9 +1,19 @@
 module.exports = class Utils {
-    static normalize(vec2) {
-        const len = Math.sqrt(vec2.x * vec2.x + vec2.y * vec2.y);
+    static dim(vec) {
+        return Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+    }
 
-        vec2.x /= len;
-        vec2.y /= len;
+    static dot(vec1, vec2) {
+        return vec1.x * vec2.x + vec1.y * vec2.y;
+    }
+
+    static normalize(vec) {
+        const len = Math.sqrt(vec.x * vec.x + vec.y * vec.y);
+
+        return {
+            x: vec.x / len,
+            y: vec.y / len,
+        };
     }
 
     static distance(vec1, vec2) {

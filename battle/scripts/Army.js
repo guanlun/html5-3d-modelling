@@ -4,12 +4,12 @@ module.exports = class Army {
         this.soldiers = [];
     }
 
-    simulate(state) {
+    simulate(frame, state) {
         this.soldiers.forEach(s => {
             if  (this.side === 'red') {
-                s.simulate(this, state.blueArmy);
+                s.simulate(frame, this, state.blueArmy);
             } else {
-                s.simulate(this, state.redArmy);
+                s.simulate(frame, this, state.redArmy);
             }
         });
     }
