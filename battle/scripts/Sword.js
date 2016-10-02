@@ -9,6 +9,8 @@ module.exports = class Sword {
 
         this.minRange = 0;
 
+        this.rotationSpeed = 0.1;
+
         this.currAttackFrame = 0;
 
         this.startPos = {
@@ -23,11 +25,7 @@ module.exports = class Sword {
         this.type = 'sword';
     }
 
-    attack(holder, target, facing) {
-        if (this.status === 'holding') {
-            this.status = 'out';
-        }
-
+    simulate(holder, target, facing) {
         if (this.status === 'out') {
             this.currAttackFrame++;
 
@@ -50,18 +48,6 @@ module.exports = class Sword {
                 const attackAngle = Utils.dot(combatDir, target.facing);
 
                 target.handleAttack(this, attackAngle);
-
-                // const rand = Math.random();
-                //
-                // if (attackAngle < -0.5) {
-                //     if (rand > 0.9) {
-                //         target.receiveDamage(this.damage);
-                //     }
-                // } else {
-                //     if (rand > 0.2) {
-                //         target.receiveDamage(this.damage);
-                //     }
-                // }
             }
         } else if (this.status === 'back') {
             this.currAttackFrame--;
@@ -69,6 +55,12 @@ module.exports = class Sword {
             if (this.currAttackFrame === 0) {
                 this.status = 'holding';
             }
+        }
+    }
+
+    attack() {
+        if (this.status === 'holding') {
+            this.status = 'out';
         }
     }
 
@@ -91,7 +83,6 @@ module.exports = class Sword {
     }
 
     render(ctx) {
-
         this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
         ctx.save();
         ctx.rotate(this.offsetAngle);
@@ -99,6 +90,12 @@ module.exports = class Sword {
         ctx.beginPath();
         ctx.moveTo(this.startPos.x, this.startPos.y);
         ctx.lineTo(this.startPos.x, this.startPos.y - this.length);
+        ctx.quadraticCurveTo(this.startPos.x - 5, this.startPos.y + 3, this.startPos.x, this.startPos.y);
+        ctx.closePath();
+
+        // ctx.beginPath();
+        ctx.moveTo(this.startPos.x - 4, this.startPos.y - 2);
+        ctx.lineTo(this.startPos.x + 3, this.startPos.y - 2);
         ctx.closePath();
         ctx.stroke();
 

@@ -3,6 +3,7 @@ const Utils = require('./Utils');
 const Sword = require('./Sword');
 const Spear = require('./Spear');
 const Shield = require('./Shield');
+const Bow = require('./Bow');
 
 const CROSS_SIZE = 5;
 
@@ -40,15 +41,19 @@ module.exports = class Soldier {
         switch (weaponType) {
             case 'sword':
                 this.weapon = new Sword();
-                this.maxMovingSpeed = 1.5;
+                this.maxMovingSpeed = 0.9;
                 break;
             case 'spear':
                 this.weapon = new Spear();
-                this.maxMovingSpeed = 1.2;
+                this.maxMovingSpeed = 0.5;
                 break;
             case 'shield':
                 this.weapon = new Shield();
-                this.maxMovingSpeed = 1.2;
+                this.maxMovingSpeed = 0.5;
+                break;
+            case 'bow':
+                this.weapon = new Bow();
+                this.maxMovingSpeed = 0.7;
                 break;
         }
     }
@@ -65,26 +70,47 @@ module.exports = class Soldier {
         }
 
         const dist = this.distTo(target);
-        this.facing.x = (target.position.x - this.position.x) / dist;
-        this.facing.y = (target.position.y - this.position.y) / dist;
+
+        const newFacingX = (target.position.x - this.position.x) / dist;
+        const newFacingY = (target.position.y - this.position.y) / dist;
+        const newFacingAngle = Math.atan2(newFacingY, newFacingX);
+        let currFacingAngle = Math.atan2(this.facing.y, this.facing.x);
+
+        const rotationSpeed = this.weapon.rotationSpeed;
+
+        if (newFacingAngle > currFacingAngle) {
+            if (newFacingAngle - currFacingAngle < Math.PI) {
+                currFacingAngle = Math.min(newFacingAngle, currFacingAngle + rotationSpeed);
+            } else {
+                currFacingAngle = Math.min(newFacingAngle, currFacingAngle - rotationSpeed);
+            }
+        } else {
+            if (currFacingAngle - newFacingAngle < Math.PI) {
+                currFacingAngle = Math.max(newFacingAngle, currFacingAngle - rotationSpeed);
+            } else {
+                currFacingAngle = Math.max(newFacingAngle, currFacingAngle + rotationSpeed);
+            }
+        }
+
+        this.facing.x = Math.cos(currFacingAngle);
+        this.facing.y = Math.sin(currFacingAngle);
+
+        // console.log(this.facing);
 
         if (this.state === 'moving') {
             this.target = target;
 
-            let attackRange = dist;
-
-            if (target.state === 'backing-up') {
-                // Eneny backing-up, get closer before attacking
-                attackRange *= 0.5;
-            }
-
-            if (attackRange > this.weapon.length) {
-                this.velocity.x += this.facing.x * 0.1;
-                this.velocity.y += this.facing.y * 0.1;
+            if (dist > this.weapon.length) {
+                this.velocity.x += this.facing.x * 0.02;
+                this.velocity.y += this.facing.y * 0.02;
 
                 if (Utils.dim(this.velocity) > this.maxMovingSpeed) {
-                    this.velocity.x /= this.maxMovingSpeed;
-                    this.velocity.y /= this.maxMovingSpeed;
+                    this.velocity = Utils.normalize(this.velocity);
+
+                    this.velocity.x *= this.maxMovingSpeed;
+                    this.velocity.y *= this.maxMovingSpeed;
+                    // this.velocity.x /= this.maxMovingSpeed;
+                    // this.velocity.y /= this.maxMovingSpeed;
                 }
 
                 friendly.soldiers.forEach(f => {
@@ -92,8 +118,8 @@ module.exports = class Soldier {
                         return;
                     }
 
-                    // this.velocity.x += 0.01 * (f.velocity.x - this.velocity.x);
                     // this.velocity.y += 0.01 * (f.velocity.y - this.velocity.y);
+                    // this.velocity.x += 0.01 * (f.velocity.x - this.velocity.x);
 
                     const xDiff = f.position.x - this.position.x;
                     const yDiff = f.position.y - this.position.y;
@@ -101,62 +127,53 @@ module.exports = class Soldier {
                     const dist = Utils.distance(this.position, f.position);
 
                     if (dist < 10) {
-                        this.velocity.x -= 2 / dist * xDiff;
-                        this.velocity.y -= 2 / dist * yDiff;
+                        this.velocity.x -= 0.5 / dist * xDiff;
+                        this.velocity.y -= 0.5 / dist * yDiff;
                     }
                 });
 
                 this.position.x += this.velocity.x;
                 this.position.y += this.velocity.y;
 
-            } else {
-                this.state = 'fighting';
-            }
-        } else if (this.state === 'fighting') {
-            if (target !== this.target) {
-                this.target = target;
-                this.state = 'moving';
-            }
-
-            if (dist > this.weapon.length) {
-                this.state = 'moving';
             } else if (dist < this.weapon.minRange) {
                 this.state = 'backing-up';
-            }
 
-            // const target = this.target;
-            if (target.alive) {
-                this.attack(target, frame);
             } else {
-                if (this.attackAnimationFrame >= this.attackInterval) {
-                    this.state = 'moving';
-                }
+                this.attack(target, frame);
             }
-
-            this.attackAnimationFrame++;
         } else if (this.state === 'backing-up') {
             if (dist > this.weapon.minRange) {
-                this.state = 'fighting';
+                this.state = 'moving';
             }
 
-            this.position.x -= this.facing.x * 0.3;
-            this.position.y -= this.facing.y * 0.3;
+            this.position.x -= this.facing.x * 0.5;
+            this.position.y -= this.facing.y * 0.5;
         }
+
+        const facing = Math.atan2(this.facing.y, this.facing.x) + Math.PI / 2;
+
+        this.weapon.simulate(this, target, facing);
     }
 
     handleAttack(attackWeapon, angle) {
         const damage = this.weapon.defend(attackWeapon, angle);
-        this.hp -= damage;
 
-        if (this.hp <= 0) {
-            this.alive = false;
+        if (damage > 0) {
+            this.hp -= damage;
+
+            this.velocity.x = 0;
+            this.velocity.y = 0;
+
+            if (this.hp <= 0) {
+                this.alive = false;
+            }
         }
     }
 
     attack(target, frame) {
-        const facing = Math.atan2(this.facing.y, this.facing.x) + Math.PI / 2;
 
-        this.weapon.attack(this, target, facing);
+
+        this.weapon.attack();
         // if (frame - this.lastAttackFrame > this.attackInterval) {
         //     this.attackAnimationFrame = 0;
         //     this.lastAttackFrame = frame;

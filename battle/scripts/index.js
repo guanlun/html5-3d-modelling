@@ -1,6 +1,4 @@
 const Soldier = require('./Soldier');
-const SpearMan = require('./SpearMan');
-const ShieldMan = require('./ShieldMan');
 const Army = require('./Army');
 
 const canvas = document.getElementById('canvas');
@@ -16,22 +14,53 @@ let frame = 0;
 
 let currSoliderType = 'sword';
 
-function loadPreset() {
+function loadPreset1() {
+    state.redArmy.clear();
+    state.blueArmy.clear();
+
+    for (let i = 0; i < 320; i++) {
+        const x = Math.random() * 300 + 100;
+        const y = Math.random() * 500 + 150;
+
+        state.redArmy.addSoldier(new Soldier(x, y, 'sword'));
+    }
+
+    for (let i = 0; i < 45; i++) {
+        const x = 500 + Math.random() * 2;
+        const y = 60 + i * 16;
+
+        state.blueArmy.addSoldier(new Soldier(x, y, 'shield'));
+    }
+
+    for (let i = 0; i < 45; i++) {
+        const x = 510 + Math.random() * 2;
+        const y = 70 + i * 16;
+
+        state.blueArmy.addSoldier(new Soldier(x, y, 'shield'));
+    }
+
+    for (let i = 0; i < 40; i++) {
+        const x = 560 + Math.random() * 3;
+        const y = 130 + i * 14;
+
+        state.blueArmy.addSoldier(new Soldier(x, y, 'spear'));
+    }
+
+    for (let i = 0; i < 40; i++) {
+        const x = 600 + Math.random() * 3;
+        const y = 142 + i * 14;
+
+        state.blueArmy.addSoldier(new Soldier(x, y, 'spear'));
+    }
+}
+
+function loadPreset2() {
     state.redArmy.clear();
     state.blueArmy.clear();
 
     state.redArmy.addSoldier(new Soldier(200, 200, 'sword'));
-    state.redArmy.addSoldier(new Soldier(210, 250, 'sword'));
-    state.redArmy.addSoldier(new Soldier(205, 300, 'sword'));
-    state.redArmy.addSoldier(new Soldier(205, 350, 'sword'));
-    state.redArmy.addSoldier(new Soldier(205, 400, 'sword'));
 
-    state.blueArmy.addSoldier(new Soldier(500, 200, 'spear'));
-    state.blueArmy.addSoldier(new Soldier(500, 280, 'spear'));
-    state.blueArmy.addSoldier(new Soldier(500, 230, 'spear'));
-    state.blueArmy.addSoldier(new Soldier(400, 200, 'shield'));
-    state.blueArmy.addSoldier(new Soldier(400, 300, 'shield'));
-    state.blueArmy.addSoldier(new Soldier(400, 230, 'shield'));
+    state.blueArmy.addSoldier(new Soldier(400, 200, 'spear'));
 }
 
 function simulate() {
@@ -73,16 +102,23 @@ const soldierSelect = document.getElementById('soldier-select');
 soldierSelect.onchange = (evt) => {
     if (soldierSelect.value === 'swordsman') {
         currSoliderType = 'sword';
-    } else if (soldierSelect.value === 'shieldman'){
+    } else if (soldierSelect.value === 'shieldman') {
         currSoliderType = 'shield';
+    } else if (soldierSelect.value === 'archer') {
+        currSoliderType = 'bow';
     } else {
         currSoliderType = 'spear';
     }
 }
 
-const presetButton = document.getElementById('preset-btn');
-presetButton.onclick = () => {
-    loadPreset();
+const presetButton1 = document.getElementById('preset-btn-1');
+presetButton1.onclick = () => {
+    loadPreset1();
+}
+
+const presetButton2 = document.getElementById('preset-btn-2');
+presetButton2.onclick = () => {
+    loadPreset2();
 }
 
 canvas.onmouseup = (evt) => {

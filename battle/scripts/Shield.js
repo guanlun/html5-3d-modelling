@@ -9,6 +9,8 @@ module.exports = class Shield {
 
         this.minRange = 0;
 
+        this.rotationSpeed = 0.1;
+
         this.currAttackFrame = 0;
 
         this.startPos = {
@@ -23,11 +25,13 @@ module.exports = class Shield {
         this.type = 'shield';
     }
 
-    attack(holder, target, facing) {
+    attack() {
         if (this.status === 'holding') {
             this.status = 'out';
         }
+    }
 
+    simulate(holder, target, facing) {
         if (this.status === 'out') {
             this.currAttackFrame++;
 
