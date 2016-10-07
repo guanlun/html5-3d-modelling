@@ -23,6 +23,13 @@ module.exports = class Utils {
         };
     }
 
+    static angleBetween(vec1, vec2) {
+        const dotProduct = Utils.dot(vec1, vec2);
+        const dimProduct = Utils.dim(vec1) * Utils.dim(vec2);
+
+        return dotProduct / dimProduct;
+    }
+
     static distance(vec1, vec2) {
         const diffX = vec1.x - vec2.x;
         const diffY = vec1.y - vec2.y;

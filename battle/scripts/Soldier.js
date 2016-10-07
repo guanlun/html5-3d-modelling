@@ -95,8 +95,6 @@ module.exports = class Soldier {
         this.facing.x = Math.cos(currFacingAngle);
         this.facing.y = Math.sin(currFacingAngle);
 
-        // console.log(this.facing);
-
         if (this.state === 'moving') {
             this.target = target;
 
@@ -198,8 +196,15 @@ module.exports = class Soldier {
             this.alive = false;
         }
 
-        this.velocity.x = 0;
-        this.velocity.y = 0;
+        // this.velocity.x = 0;
+        // this.velocity.y = 0;
+    }
+
+    renderAlive(ctx) {
+        ctx.arc(0, 0, this.dimension, 0, Math.PI * 2);
+        ctx.fill();
+
+        this.weapon.render(ctx);
     }
 
     render(ctx, color) {
@@ -216,31 +221,7 @@ module.exports = class Soldier {
 
         ctx.beginPath();
         if (this.alive) {
-            // if (this.state === 'fighting') {
-            //     ctx.globalAlpha = 1;
-            // } else {
-            //     ctx.globalAlpha = 0.5;
-            // }
-            ctx.arc(0, 0, this.dimension, 0, Math.PI * 2);
-            ctx.fill();
-
-            this.weapon.render(ctx);
-
-            // ctx.beginPath();
-            // ctx.moveTo(2, -5);
-            //
-            // let weaponPos;
-            //
-            // if (this.attackAnimationFrame <= this.attackInterval / 2) {
-            //     weaponPos = this.attackAnimationFrame * this.attackRangeCoeff;
-            // } else {
-            //     weaponPos = (this.attackInterval - this.attackAnimationFrame) * this.attackRangeCoeff;
-            // }
-            //
-            // ctx.lineTo(2, -8 - weaponPos);
-            // ctx.closePath();
-            //
-            // ctx.stroke();
+            this.renderAlive(ctx);
         } else {
             ctx.moveTo(-CROSS_SIZE, -CROSS_SIZE);
             ctx.lineTo(CROSS_SIZE, CROSS_SIZE);
@@ -262,7 +243,11 @@ module.exports = class Soldier {
         return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
     }
 
-    findTarget(enemySoldiers) {
+    findTarget(enemySoldiers, angle) {
+        if (angle === undefined) {
+            angle = Math.PI;
+        }
+
         let minDist = Number.MAX_VALUE;
         let target = null;
 
@@ -270,6 +255,11 @@ module.exports = class Soldier {
             const es = enemySoldiers[i];
 
             if (!es.alive) {
+                continue;
+            }
+
+            const diff = Utils.sub(es.position, this.position);
+            if (Utils.angleBetween(diff, this.facing) < Math.cos(angle)) {
                 continue;
             }
 

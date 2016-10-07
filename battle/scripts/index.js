@@ -1,4 +1,5 @@
 const Soldier = require('./Soldier');
+const Horseman = require('./Horseman');
 const Army = require('./Army');
 
 const canvas = document.getElementById('canvas');
@@ -20,7 +21,7 @@ function loadPreset1() {
 
     for (let i = 0; i < 320; i++) {
         const x = Math.random() * 300 + 100;
-        const y = Math.random() * 500 + 150;
+        const y = Math.random() * 300 + 300;
 
         state.redArmy.addSoldier(new Soldier(x, y, 'sword'));
     }
@@ -52,15 +53,26 @@ function loadPreset1() {
 
         state.blueArmy.addSoldier(new Soldier(x, y, 'spear'));
     }
+
+    for (let i = 0; i < 15; i++) {
+        const x = 100 + i * 25;
+        const y = 50;
+
+        state.blueArmy.addSoldier(new Horseman(x, y));
+    }
 }
 
 function loadPreset2() {
     state.redArmy.clear();
     state.blueArmy.clear();
 
-    state.redArmy.addSoldier(new Soldier(200, 200, 'sword'));
+    for (let i = 0; i < 250; i++) {
+        state.redArmy.addSoldier(new Soldier(Math.random() * 200 + 100, Math.random() * 300 + 150, 'spear'));
+    }
 
-    state.blueArmy.addSoldier(new Soldier(400, 200, 'spear'));
+    for (let i = 0; i < 50; i++) {
+        state.blueArmy.addSoldier(new Horseman(Math.random() * 400 + 600, Math.random() * 200 + 200));
+    }
 }
 
 function simulate() {
@@ -106,8 +118,10 @@ soldierSelect.onchange = (evt) => {
         currSoliderType = 'shield';
     } else if (soldierSelect.value === 'archer') {
         currSoliderType = 'bow';
-    } else {
+    } else if (soldierSelect.value === 'spearman') {
         currSoliderType = 'spear';
+    } else if (soldierSelect.value === 'horseman') {
+        currSoliderType = 'horseman';
     }
 }
 
@@ -131,5 +145,10 @@ canvas.onmouseup = (evt) => {
     } else {
         selectedArmy = state.blueArmy;
     }
-    selectedArmy.addSoldier(new Soldier(evt.offsetX, evt.offsetY, currSoliderType));
+
+    if (currSoliderType === 'horseman') {
+        selectedArmy.addSoldier(new Horseman(evt.offsetX, evt.offsetY));
+    } else {
+        selectedArmy.addSoldier(new Soldier(evt.offsetX, evt.offsetY, currSoliderType));
+    }
 }
