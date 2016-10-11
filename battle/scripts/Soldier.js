@@ -169,35 +169,7 @@ module.exports = class Soldier {
     }
 
     attack(target, frame) {
-
-
         this.weapon.attack();
-        // if (frame - this.lastAttackFrame > this.attackInterval) {
-        //     this.attackAnimationFrame = 0;
-        //     this.lastAttackFrame = frame;
-        // } else {
-        //     if (this.attackAnimationFrame === this.attackInterval / 2) {
-        //         target.respondToAttack(this);
-        //     }
-        // }
-    }
-
-    respondToAttack(attacker) {
-        let survivalRate;
-        if (this.target === attacker) {
-            // Focusing on the attacker
-            survivalRate = 0.9;
-        } else {
-            // Fighting someone else, more likely to be killed
-            survivalRate = 0.2;
-        }
-
-        if (Math.random() > survivalRate) {
-            this.alive = false;
-        }
-
-        // this.velocity.x = 0;
-        // this.velocity.y = 0;
     }
 
     renderAlive(ctx) {

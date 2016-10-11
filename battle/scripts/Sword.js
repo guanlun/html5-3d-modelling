@@ -39,15 +39,19 @@ module.exports = class Sword {
                 y: target.position.y - holder.position.y,
             };
 
-            const dist = Math.abs(diff.x * normalX + diff.y * normalY);
+            const weaponDist = Math.abs(diff.x * normalX + diff.y * normalY);
 
-            if (dist < 5) {
+            if (weaponDist < 5) {
                 this.status = 'back';
 
                 const combatDir = Utils.normalize(diff);
                 const attackAngle = Utils.dot(combatDir, target.facing);
 
-                target.handleAttack(this, attackAngle);
+                const targetDist = Utils.dim(Utils.sub(holder.position, target.position));
+
+                if (targetDist < 25) {
+                    target.handleAttack(this, attackAngle);
+                }
             }
         } else if (this.status === 'back') {
             this.currAttackFrame--;

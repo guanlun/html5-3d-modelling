@@ -2,13 +2,13 @@ const Soldier = require('./Soldier');
 const Utils = require('./Utils');
 
 const OVERCHARGE_FRAME = 60;
-const COOLDOWN_FRAME = 10;
+const COOLDOWN_FRAME = 20;
 
 module.exports = class Horseman extends Soldier {
     constructor(x, y) {
         super(x, y, 'sword');
 
-        this.maxMovingSpeed = 2;
+        this.maxMovingSpeed = 3;
 
         this.weapon.rotationSpeed = 0.04;
 
@@ -78,8 +78,11 @@ module.exports = class Horseman extends Soldier {
 
             if (target && this.distTo(target) < this.weapon.length) {
                 if (this.attackCooldown === 0) {
-                    this.target.hp -= 50;
-                    console.log(this.target.hp);
+                    this.speed *= 0.5;
+
+                    this.target.hp -= this.speed * 40;
+
+                    // this.target.velocity = Utils.sub(this.position, target.position);
                     if (this.target.hp <= 0) {
                         this.target.alive = false;
                     }
@@ -89,7 +92,7 @@ module.exports = class Horseman extends Soldier {
             }
 
             if (this.speed < this.maxMovingSpeed) {
-                this.speed += 0.1;
+                this.speed += 0.05;
             }
 
             this.velocity.x = this.facing.x * this.speed;
@@ -97,29 +100,29 @@ module.exports = class Horseman extends Soldier {
 
             const speed = Utils.dim(this.velocity);
 
-            if (speed > this.maxMovingSpeed) {
-                this.velocity.x *= this.maxMovingSpeed / speed;
-                this.velocity.y *= this.maxMovingSpeed / speed;
-            }
-
             friendly.soldiers.forEach(f => {
                 if (f === this || !f.alive) {
                     return;
                 }
 
-                // this.velocity.y += 0.01 * (f.velocity.y - this.velocity.y);
-                // this.velocity.x += 0.01 * (f.velocity.x - this.velocity.x);
+                // this.velocity.y += 0.03 * (f.velocity.y - this.velocity.y);
+                // this.velocity.x += 0.03 * (f.velocity.x - this.velocity.x);
 
                 const xDiff = f.position.x - this.position.x;
                 const yDiff = f.position.y - this.position.y;
 
                 const dist = Utils.distance(this.position, f.position);
 
-                if (dist < 10) {
-                    this.velocity.x -= 0.5 / dist * xDiff;
-                    this.velocity.y -= 0.5 / dist * yDiff;
+                if (dist < 25) {
+                    this.velocity.x -= 1.2 / dist * xDiff;
+                    this.velocity.y -= 1.2 / dist * yDiff;
                 }
             });
+
+            if (speed > this.maxMovingSpeed) {
+                this.velocity.x *= this.maxMovingSpeed / speed;
+                this.velocity.y *= this.maxMovingSpeed / speed;
+            }
 
             this.position.x += this.velocity.x;
             this.position.y += this.velocity.y;
@@ -132,7 +135,20 @@ module.exports = class Horseman extends Soldier {
     }
 
     handleAttack(attackWeapon, angle) {
-        const damage = this.weapon.defend(attackWeapon, angle);
+        // const damage = this.weapon.defend(attackWeapon, angle);
+        let damage = 0;
+
+        const rand = Math.random();
+
+        if (angle < -0.3) {
+            if (rand > 0.7) {
+                damage = 30;
+            }
+        } else {
+            if (rand > 0.9) {
+                damage = 10;
+            }
+        }
 
         if (damage > 0) {
             this.hp -= damage;
@@ -154,7 +170,7 @@ module.exports = class Horseman extends Soldier {
 
         ctx.closePath();
 
-        ctx.stroke();
+        ctx.fill();
     }
 
 

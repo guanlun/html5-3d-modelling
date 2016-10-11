@@ -66,12 +66,26 @@ function loadPreset2() {
     state.redArmy.clear();
     state.blueArmy.clear();
 
-    for (let i = 0; i < 250; i++) {
-        state.redArmy.addSoldier(new Soldier(Math.random() * 200 + 100, Math.random() * 300 + 150, 'spear'));
+    for (let i = 0; i < 120; i++) {
+        state.redArmy.addSoldier(new Soldier(Math.random() * 100 + 50, Math.random() * 800 + 100, 'sword'));
     }
 
-    for (let i = 0; i < 50; i++) {
-        state.blueArmy.addSoldier(new Horseman(Math.random() * 400 + 600, Math.random() * 200 + 200));
+    for (let i = 0; i < 20; i++) {
+        const horseman = new Horseman(550, i * 30 + 100);
+        horseman.facing = {
+            x: -1,
+            y: 0,
+        };
+        state.blueArmy.addSoldier(horseman);
+    }
+
+    for (let i = 0; i < 30; i++) {
+        const horseman = new Horseman(600, i * 30 + 0);
+        horseman.facing = {
+            x: -1,
+            y: 0,
+        };
+        state.blueArmy.addSoldier(horseman);
     }
 }
 
