@@ -22,6 +22,7 @@ let currSoliderType = 'sword';
 function loadPreset1() {
     state.redArmy.clear();
     state.blueArmy.clear();
+    state.obstacles = [];
 
     for (let i = 0; i < 320; i++) {
         const x = Math.random() * 300 + 100;
@@ -161,6 +162,8 @@ clearButton.onclick = () => {
     state.simulating = false;
     state.redArmy.clear();
     state.blueArmy.clear();
+
+    state.obstacles = [];
 }
 
 const soldierSelect = document.getElementById('soldier-select');

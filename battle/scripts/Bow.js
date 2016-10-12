@@ -4,10 +4,12 @@ const Constants = require('./Constants');
 
 module.exports = class Bow {
     constructor() {
-        this.length = 300;
-        this.minRange = 10;
+        this.length = 400;
+        this.minRange = 0;
 
         this.damage = 50;
+
+        this.rotationSpeed = 0.04;
 
         this.currAttackFrame = 0;
 
@@ -21,56 +23,72 @@ module.exports = class Bow {
         this.status = 'holding';
 
         this.type = 'bow';
+
+        this.arrowVel = {
+            x: 0,
+            y: 0,
+        };
+
+        this.arrowPos = {
+            x: 0,
+            y: 0,
+        }
     }
 
-    attack(holder, target, facing) {
+    simulate(holder, target, facing) {
+        if (this.status === 'out') {
+            if (this.currAttackFrame === 0) {
+                this.arrowVel = {
+                    x: Math.cos(facing) * 5,
+                    y: Math.sin(facing) * 5,
+                };
+
+                this.offsetPos = {
+                    x: 0,
+                    y: 0,
+                };
+            }
+
+            this.currAttackFrame++;
+
+            if (this.currAttackFrame === 50) {
+                this.currAttackFrame = 0;
+            }
+
+            console.log(this.arrowVel);
+
+            this.arrowPos.x += this.arrowVel.x;
+            this.arrowPos.y += this.arrowVel.y;
+
+            // this.offsetPos = - 8 * this.currAttackFrame;
+            //
+            // const reach = this.length - this.offsetPos;
+            //
+            // const arrowPos = {
+            //     x: holder.position.x + reach * Math.sin(facing),
+            //     y: holder.position.y - reach * Math.cos(facing),
+            // }
+            //
+            // const diff = Utils.sub(target.position, arrowPos);
+            //
+            // const dist = Utils.dim(diff);
+            //
+            // console.log(diff);
+            //
+            // if (dist < 5) {
+            //     this.status = 'back';
+            //
+            //     const attackAngle = Utils.dot(combatDir, target.facing);
+            //
+            //     target.handleAttack(this, attackAngle, relativeClosingSpeed);
+            // }
+        }
+    }
+
+    attack() {
         if (this.status === 'holding') {
             this.status = 'out';
         }
-
-        if (this.status === 'out') {
-            this.currAttackFrame++;
-
-            if (this.currAttackFrame === 20) {
-                this.status = 'back';
-            }
-
-            this.offsetPos = 20 - this.currAttackFrame * 10;
-
-            const reach = this.length - this.offsetPos;
-
-            // console.log(reach * Math.cos(facing), reach * Math.sin(facing));
-            const headPos = {
-                x: holder.position.x + reach * Math.sin(facing),
-                y: holder.position.y - reach * Math.cos(facing),
-            }
-
-            const diff = {
-                x: target.position.x - holder.position.x,
-                y: target.position.y - holder.position.y,
-            };
-
-            const dist = Utils.dim(Utils.sub(headPos, target.position));
-
-            if (dist < 5) {
-                // this.status = 'back';
-                this.currAttackFrame = 0;
-
-                const combatDir = Utils.normalize(diff);
-                const attackAngle = Utils.dot(combatDir, target.facing);
-
-                target.handleAttack(this, attackAngle);
-            }
-        }
-        // } else if (this.status === 'back') {
-        //     this.currAttackFrame--;
-        //
-        //     this.offsetPos = 20 - this.currAttackFrame * 10;
-        //
-        //     if (this.currAttackFrame === 0) {
-        //         this.status = 'holding';
-        //     }
-        // }
     }
 
     defend(attackWeapon, attackAngle) {
@@ -96,7 +114,7 @@ module.exports = class Bow {
 
         // this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
         ctx.save();
-        ctx.translate(0, this.offsetPos);
+        ctx.translate(this.arrowPos.x, this.arrowPos.y);
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(0, 20);

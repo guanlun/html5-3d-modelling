@@ -2,24 +2,25 @@
 <html>
 <head>
     <title>Battle Simulator</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css" />
     <style>
-		body { margin: 0; }
+		body { margin: 10px; }
 	</style>
 </head>
 <body oncontextmenu="return false;">
     <div id="controls">
-        <button id="start-btn">Start</button>
-        <button id="pause-btn">Pause</button>
-        <button id="clear-btn">Clear</button>
-        <select id="soldier-select">
+        <button id="start-btn" class="btn btn-default">Start</button>
+        <button id="pause-btn" class="btn btn-default">Pause</button>
+        <button id="clear-btn" class="btn btn-default">Clear</button>
+        <select id="soldier-select" class="btn btn-default">
             <option>swordsman</option>
             <option>spearman</option>
             <option>shieldman</option>
             <option>archer</option>
             <option>horseman</option>
         </select>
-        <button id="preset-btn-1">Load Preset 1</button>
-        <button id="preset-btn-2">Load Preset 2</button>
+        <button id="preset-btn-1" class="btn btn-default">Load Preset 1</button>
+        <button id="preset-btn-2" class="btn btn-default">Load Preset 2</button>
     </div>
 
     <canvas id="canvas" width="1200" height="800"></canvas>
