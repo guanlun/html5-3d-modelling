@@ -13,7 +13,7 @@ module.exports = class Soldier {
         this.speedLimit = 1;
         this.dimension = 5;
 
-        this.hp = 100;
+        this.hp = 1000;
 
         this.position = {
             x: x,
@@ -37,6 +37,7 @@ module.exports = class Soldier {
 
         this.lastAttackFrame = 0;
         this.attackAnimationFrame = 0;
+        this.attackCooldown = 0;
 
         switch (weaponType) {
             case 'sword':
@@ -58,7 +59,7 @@ module.exports = class Soldier {
         }
     }
 
-    simulate(frame, friendly, enemy) {
+    simulate(frame, friendly, enemy, obstacles) {
         if (!this.alive) {
             return;
         }
@@ -98,6 +99,10 @@ module.exports = class Soldier {
         if (this.state === 'moving') {
             this.target = target;
 
+            if (this.attackCooldown > 0) {
+                this.attackCooldown--;
+            }
+
             if (dist > this.weapon.length) {
                 this.velocity.x += this.facing.x * 0.02;
                 this.velocity.y += this.facing.y * 0.02;
@@ -107,8 +112,6 @@ module.exports = class Soldier {
 
                     this.velocity.x *= this.maxMovingSpeed;
                     this.velocity.y *= this.maxMovingSpeed;
-                    // this.velocity.x /= this.maxMovingSpeed;
-                    // this.velocity.y /= this.maxMovingSpeed;
                 }
 
                 friendly.soldiers.forEach(f => {
@@ -148,9 +151,15 @@ module.exports = class Soldier {
             this.position.y -= this.facing.y * 0.5;
         }
 
-        const facing = Math.atan2(this.facing.y, this.facing.x) + Math.PI / 2;
+        if (this.attackCooldown === 0) {
+            const facing = Math.atan2(this.facing.y, this.facing.x) + Math.PI / 2;
 
-        this.weapon.simulate(this, target, facing);
+            this.weapon.simulate(this, target, facing);
+        }
+    }
+
+    attackCompleted() {
+        this.attackCooldown = 30;
     }
 
     handleAttack(attackWeapon, angle) {

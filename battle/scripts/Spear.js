@@ -47,15 +47,23 @@ module.exports = class Spear {
                 y: target.position.y - holder.position.y,
             };
 
+            const relativeVel = Utils.sub(target.velocity, holder.velocity);
+            const combatDir = Utils.normalize(diff);
+
+            const relativeClosingSpeed = Utils.dot(relativeVel, combatDir);
+
+            const attackFrameThreshold = 10 / relativeClosingSpeed;
+
             const dist = Utils.dim(Utils.sub(headPos, target.position));
 
-            if (dist < 5 && this.currAttackFrame > 10) {
+            if (dist < 5 && this.currAttackFrame > attackFrameThreshold) {
                 this.status = 'back';
 
-                const combatDir = Utils.normalize(diff);
                 const attackAngle = Utils.dot(combatDir, target.facing);
 
-                target.handleAttack(this, attackAngle);
+                target.handleAttack(this, attackAngle, relativeClosingSpeed);
+
+                holder.attackCompleted();
             }
         } else if (this.status === 'back') {
             this.currAttackFrame--;

@@ -17,9 +17,13 @@ module.exports = class Horseman extends Soldier {
         this.attackCooldown = 0;
 
         this.speed = 0;
+
+        this.isHorseman = true;
+
+        this.hp = 500;
     }
 
-    simulate(frame, friendly, enemy) {
+    simulate(frame, friendly, enemy, obstacles) {
         if (!this.alive) {
             return;
         }
@@ -28,23 +32,64 @@ module.exports = class Horseman extends Soldier {
 
         let newFacingX, newFacingY;
 
-        if (target === null) {
-            if (this.overcharge === 0) {
-                newFacingX = -this.facing.y;
-                newFacingY = this.facing.x;
-            } else {
-                newFacingX = this.facing.x;
-                newFacingY = this.facing.y;
+        let obstacleApproaching = false;
 
-                this.overcharge--;
+        if (!Utils.isZeroVec(this.velocity)) {
+            for (let oi = 0; oi < obstacles.length; oi++) {
+                const o = obstacles[oi];
+
+                const vecToObstacleCenter = Utils.sub(o.position, this.position);
+
+                const movingDir = Utils.normalize(this.velocity);
+                const closingDist = Utils.dot(vecToObstacleCenter, movingDir);
+
+                if (closingDist < 0 || closingDist > o.radius) {
+                    continue;
+                }
+
+                const closestPosition = Utils.add(this.position, Utils.scalarMult(closingDist, movingDir));
+                const outwardDir = Utils.sub(closestPosition, o.position);
+                const closestDistToCenter = Utils.dim(outwardDir);
+
+                if (closestDistToCenter > o.radius) {
+                    continue;
+                }
+
+                const outwardUnitDir = Utils.normalize(outwardDir);
+                const turningTargetPosition = Utils.add(o.position, Utils.scalarMult(o.radius, outwardUnitDir));
+
+                const turiningDirection = Utils.sub(turningTargetPosition, this.position);
+
+                newFacingX = turiningDirection.x;
+                newFacingY = turiningDirection.y;
+
+                obstacleApproaching = true;
+
+                break;
             }
-        } else {
-            const dist = this.distTo(target);
+        }
 
-            newFacingX = (target.position.x - this.position.x) / dist;
-            newFacingY = (target.position.y - this.position.y) / dist;
+        // console.log(newFacingX, newFacingY);
 
-            this.overcharge = OVERCHARGE_FRAME;
+        if (!obstacleApproaching) {
+            if (target === null) {
+                if (this.overcharge === 0) {
+                    newFacingX = -this.facing.y;
+                    newFacingY = this.facing.x;
+                } else {
+                    newFacingX = this.facing.x;
+                    newFacingY = this.facing.y;
+
+                    this.overcharge--;
+                }
+            } else {
+                const dist = this.distTo(target);
+
+                newFacingX = (target.position.x - this.position.x) / dist;
+                newFacingY = (target.position.y - this.position.y) / dist;
+
+                this.overcharge = OVERCHARGE_FRAME;
+            }
         }
 
         const newFacingAngle = Math.atan2(newFacingY, newFacingX);
@@ -105,8 +150,8 @@ module.exports = class Horseman extends Soldier {
                     return;
                 }
 
-                // this.velocity.y += 0.03 * (f.velocity.y - this.velocity.y);
-                // this.velocity.x += 0.03 * (f.velocity.x - this.velocity.x);
+                // this.velocity.y += 0.02 * (f.velocity.y - this.velocity.y);
+                // this.velocity.x += 0.02 * (f.velocity.x - this.velocity.x);
 
                 const xDiff = f.position.x - this.position.x;
                 const yDiff = f.position.y - this.position.y;
@@ -114,8 +159,8 @@ module.exports = class Horseman extends Soldier {
                 const dist = Utils.distance(this.position, f.position);
 
                 if (dist < 25) {
-                    this.velocity.x -= 1.2 / dist * xDiff;
-                    this.velocity.y -= 1.2 / dist * yDiff;
+                    this.velocity.x -= 1 / dist * xDiff;
+                    this.velocity.y -= 1 / dist * yDiff;
                 }
             });
 
@@ -126,27 +171,33 @@ module.exports = class Horseman extends Soldier {
 
             this.position.x += this.velocity.x;
             this.position.y += this.velocity.y;
-
         }
-
-        const facing = Math.atan2(this.facing.y, this.facing.x) + Math.PI / 2;
-
-        // this.weapon.simulate(this, target, facing);
     }
 
-    handleAttack(attackWeapon, angle) {
-        // const damage = this.weapon.defend(attackWeapon, angle);
+    handleAttack(attackWeapon, angle, relativeClosingSpeed) {
         let damage = 0;
 
         const rand = Math.random();
 
-        if (angle < -0.3) {
-            if (rand > 0.7) {
-                damage = 30;
+        if (attackWeapon.type === 'spear') {
+            if (angle < -0.7) {
+                if (rand > 0.5) {
+                    damage = Math.abs(relativeClosingSpeed) * 30;
+                }
+            } else {
+                if (rand > 0.9) {
+                    damage = 20;
+                }
             }
         } else {
-            if (rand > 0.9) {
-                damage = 10;
+            if (angle < -0.3) {
+                if (rand > 0.8) {
+                    damage = 30;
+                }
+            } else {
+                if (rand > 0.9) {
+                    damage = 10;
+                }
             }
         }
 
@@ -172,6 +223,4 @@ module.exports = class Horseman extends Soldier {
 
         ctx.fill();
     }
-
-
 }
