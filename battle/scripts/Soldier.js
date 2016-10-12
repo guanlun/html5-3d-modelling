@@ -13,7 +13,7 @@ module.exports = class Soldier {
         this.speedLimit = 1;
         this.dimension = 5;
 
-        this.hp = 1000;
+        this.hp = 100;
 
         this.position = {
             x: x,
@@ -72,8 +72,50 @@ module.exports = class Soldier {
 
         const dist = this.distTo(target);
 
-        const newFacingX = (target.position.x - this.position.x) / dist;
-        const newFacingY = (target.position.y - this.position.y) / dist;
+        let newFacingX, newFacingY;
+
+        let obstacleApproaching = false;
+
+        if (!Utils.isZeroVec(this.velocity)) {
+            for (let oi = 0; oi < obstacles.length; oi++) {
+                const o = obstacles[oi];
+
+                const vecToObstacleCenter = Utils.sub(o.position, this.position);
+
+                const movingDir = Utils.normalize(this.velocity);
+                const closingDist = Utils.dot(vecToObstacleCenter, movingDir);
+
+                if (closingDist < 0 || closingDist > o.radius) {
+                    continue;
+                }
+
+                const closestPosition = Utils.add(this.position, Utils.scalarMult(closingDist, movingDir));
+                const outwardDir = Utils.sub(closestPosition, o.position);
+                const closestDistToCenter = Utils.dim(outwardDir);
+
+                if (closestDistToCenter > o.radius) {
+                    continue;
+                }
+
+                const outwardUnitDir = Utils.normalize(outwardDir);
+                const turningTargetPosition = Utils.add(o.position, Utils.scalarMult(o.radius, outwardUnitDir));
+
+                const turiningDirection = Utils.sub(turningTargetPosition, this.position);
+
+                newFacingX = turiningDirection.x;
+                newFacingY = turiningDirection.y;
+
+                obstacleApproaching = true;
+
+                break;
+            }
+        }
+
+        if (!obstacleApproaching) {
+            newFacingX = (target.position.x - this.position.x) / dist;
+            newFacingY = (target.position.y - this.position.y) / dist;
+        }
+
         const newFacingAngle = Math.atan2(newFacingY, newFacingX);
         let currFacingAngle = Math.atan2(this.facing.y, this.facing.x);
 

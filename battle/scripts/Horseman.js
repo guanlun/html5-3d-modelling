@@ -20,7 +20,7 @@ module.exports = class Horseman extends Soldier {
 
         this.isHorseman = true;
 
-        this.hp = 500;
+        // this.hp = 500;
     }
 
     simulate(frame, friendly, enemy, obstacles) {
@@ -68,8 +68,6 @@ module.exports = class Horseman extends Soldier {
                 break;
             }
         }
-
-        // console.log(newFacingX, newFacingY);
 
         if (!obstacleApproaching) {
             if (target === null) {

@@ -70,23 +70,25 @@ function loadPreset2() {
     state.redArmy.clear();
     state.blueArmy.clear();
     state.obstacles = [
-        new Obstacle(400, -150, 300),
+        new Obstacle(600, 250, 150),
+        new Obstacle(580, 500, 130),
+        new Obstacle(400, 400, 100),
     ];
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(50, 20 + 15 * i, 'sword'));
+        state.redArmy.addSoldier(new Soldier(200, 120 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(70, 25 + 15 * i, 'sword'));
+        state.redArmy.addSoldier(new Soldier(220, 125 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(90, 30 + 15 * i, 'sword'));
+        state.redArmy.addSoldier(new Soldier(240, 130 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(550, i * 30 + 115);
+        const horseman = new Horseman(750, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -95,7 +97,7 @@ function loadPreset2() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(600, i * 30 + 100);
+        const horseman = new Horseman(800, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -104,7 +106,7 @@ function loadPreset2() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(650, i * 30 + 115);
+        const horseman = new Horseman(850, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -113,20 +115,13 @@ function loadPreset2() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(700, i * 30 + 100);
+        const horseman = new Horseman(900, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
         };
         state.blueArmy.addSoldier(horseman);
     }
-
-    const horseman = new Horseman(700, 120);
-    horseman.facing = {
-       x: -1,
-       y: 0,
-    };
-    state.blueArmy.addSoldier(horseman);
 }
 
 function simulate() {
@@ -208,5 +203,22 @@ canvas.onmouseup = (evt) => {
         selectedArmy.addSoldier(new Horseman(evt.offsetX, evt.offsetY));
     } else {
         selectedArmy.addSoldier(new Soldier(evt.offsetX, evt.offsetY, currSoliderType));
+    }
+}
+
+const keySoliderMapping = {
+    1: 'swordsman',
+    2: 'spearman',
+    3: 'shieldman',
+    4: 'archer',
+    5: 'horseman'
+}
+
+window.onkeydown = (evt) => {
+    const soliderType = keySoliderMapping[evt.key];
+
+    if (soliderType !== undefined) {
+        soldierSelect.value = soliderType;
+        soldierSelect.onchange();
     }
 }
