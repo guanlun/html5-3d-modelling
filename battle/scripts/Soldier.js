@@ -42,15 +42,15 @@ module.exports = class Soldier {
         switch (weaponType) {
             case 'sword':
                 this.weapon = new Sword();
-                this.maxMovingSpeed = 0.9;
+                this.maxMovingSpeed = 1.0;
                 break;
             case 'spear':
                 this.weapon = new Spear();
-                this.maxMovingSpeed = 0.5;
+                this.maxMovingSpeed = 0.4;
                 break;
             case 'shield':
                 this.weapon = new Shield();
-                this.maxMovingSpeed = 0.5;
+                this.maxMovingSpeed = 0.4;
                 break;
             case 'bow':
                 this.weapon = new Bow();
@@ -59,7 +59,7 @@ module.exports = class Soldier {
         }
     }
 
-    simulate(frame, friendly, enemy, obstacles) {
+    simulate(frame, friendly, enemy, obstacles, isDefending) {
         if (!this.alive) {
             return;
         }
@@ -161,9 +161,6 @@ module.exports = class Soldier {
                         return;
                     }
 
-                    // this.velocity.y += 0.01 * (f.velocity.y - this.velocity.y);
-                    // this.velocity.x += 0.01 * (f.velocity.x - this.velocity.x);
-
                     const xDiff = f.position.x - this.position.x;
                     const yDiff = f.position.y - this.position.y;
 
@@ -175,8 +172,10 @@ module.exports = class Soldier {
                     }
                 });
 
-                this.position.x += this.velocity.x;
-                this.position.y += this.velocity.y;
+                if (!isDefending) {
+                    this.position.x += this.velocity.x;
+                    this.position.y += this.velocity.y;
+                }
 
             } else if (dist < this.weapon.minRange) {
                 this.state = 'backing-up';
@@ -215,6 +214,8 @@ module.exports = class Soldier {
 
             if (this.hp <= 0) {
                 this.alive = false;
+
+                this.army.handleSoldierDeath();
             }
         }
     }
@@ -226,6 +227,11 @@ module.exports = class Soldier {
     renderAlive(ctx) {
         ctx.arc(0, 0, this.dimension, 0, Math.PI * 2);
         ctx.fill();
+
+        if (this.isGeneral) {
+            ctx.arc(0, 0, this.dimension * 2, 0, Math.PI * 2);
+            ctx.stroke();
+        }
 
         this.weapon.render(ctx);
     }

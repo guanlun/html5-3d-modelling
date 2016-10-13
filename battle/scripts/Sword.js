@@ -1,9 +1,10 @@
 const Utils = require('./Utils');
+const Weapon = require('./Weapon');
 
-const Constants = require('./Constants');
-
-module.exports = class Sword {
+module.exports = class Sword extends Weapon {
     constructor() {
+        super();
+
         this.length = 20;
         this.damage = 30;
 
@@ -62,30 +63,6 @@ module.exports = class Sword {
         }
     }
 
-    attack() {
-        if (this.status === 'holding') {
-            this.status = 'out';
-        }
-    }
-
-    defend(attackWeapon, attackAngle) {
-        const blockChance = Constants.BLOCK_CHANCE[this.type];
-
-        const rand = Math.random();
-
-        if (attackAngle < blockChance.angle) {
-            if (rand > blockChance[attackWeapon.type]) {
-                return attackWeapon.damage;
-            }
-        } else {
-            if (rand > 0.2) {
-                return attackWeapon.damage;
-            }
-        }
-
-        return 0;
-    }
-
     render(ctx) {
         this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
         ctx.save();
@@ -97,7 +74,6 @@ module.exports = class Sword {
         ctx.quadraticCurveTo(this.startPos.x - 5, this.startPos.y + 3, this.startPos.x, this.startPos.y);
         ctx.closePath();
 
-        // ctx.beginPath();
         ctx.moveTo(this.startPos.x - 4, this.startPos.y - 2);
         ctx.lineTo(this.startPos.x + 3, this.startPos.y - 2);
         ctx.closePath();

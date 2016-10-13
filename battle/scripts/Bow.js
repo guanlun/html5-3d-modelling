@@ -55,33 +55,8 @@ module.exports = class Bow {
                 this.currAttackFrame = 0;
             }
 
-            console.log(this.arrowVel);
-
             this.arrowPos.x += this.arrowVel.x;
             this.arrowPos.y += this.arrowVel.y;
-
-            // this.offsetPos = - 8 * this.currAttackFrame;
-            //
-            // const reach = this.length - this.offsetPos;
-            //
-            // const arrowPos = {
-            //     x: holder.position.x + reach * Math.sin(facing),
-            //     y: holder.position.y - reach * Math.cos(facing),
-            // }
-            //
-            // const diff = Utils.sub(target.position, arrowPos);
-            //
-            // const dist = Utils.dim(diff);
-            //
-            // console.log(diff);
-            //
-            // if (dist < 5) {
-            //     this.status = 'back';
-            //
-            //     const attackAngle = Utils.dot(combatDir, target.facing);
-            //
-            //     target.handleAttack(this, attackAngle, relativeClosingSpeed);
-            // }
         }
     }
 
@@ -111,8 +86,6 @@ module.exports = class Bow {
 
 
     render(ctx) {
-
-        // this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
         ctx.save();
         ctx.translate(this.arrowPos.x, this.arrowPos.y);
         ctx.beginPath();
@@ -120,7 +93,6 @@ module.exports = class Bow {
         ctx.lineTo(0, 20);
         ctx.closePath();
         ctx.stroke();
-        // ctx.rotate(this.offsetAngle);
         ctx.restore();
 
         ctx.beginPath();

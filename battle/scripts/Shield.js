@@ -1,9 +1,10 @@
 const Utils = require('./Utils');
+const Weapon = require('./Weapon');
 
-const Constants = require('./Constants');
-
-module.exports = class Shield {
+module.exports = class Shield extends Weapon {
     constructor() {
+        super();
+
         this.length = 10;
         this.damage = 5;
 
@@ -23,12 +24,6 @@ module.exports = class Shield {
         this.status = 'holding';
 
         this.type = 'shield';
-    }
-
-    attack() {
-        if (this.status === 'holding') {
-            this.status = 'out';
-        }
     }
 
     simulate(holder, target, facing) {
@@ -74,31 +69,8 @@ module.exports = class Shield {
         }
     }
 
-    defend(attackWeapon, attackAngle) {
-        const blockChance = Constants.BLOCK_CHANCE[this.type];
-
-        const rand = Math.random();
-
-        if (attackAngle < blockChance.angle) {
-            if (rand > blockChance[attackWeapon.type]) {
-                return attackWeapon.damage;
-            }
-        } else {
-            if (rand > 0.2) {
-                return attackWeapon.damage;
-            }
-        }
-
-        return 0;
-    }
-
-
     render(ctx) {
-
-        // this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
         ctx.save();
-        // ctx.translate(this.offsetPos, 0);
-        // ctx.rotate(this.offsetAngle);
 
         ctx.beginPath();
         ctx.moveTo(this.startPos.x, this.startPos.y);

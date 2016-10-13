@@ -20,7 +20,7 @@ module.exports = class Horseman extends Soldier {
 
         this.isHorseman = true;
 
-        // this.hp = 500;
+        this.hp = 100;
     }
 
     simulate(frame, friendly, enemy, obstacles) {
@@ -123,11 +123,18 @@ module.exports = class Horseman extends Soldier {
                 if (this.attackCooldown === 0) {
                     this.speed *= 0.5;
 
-                    this.target.hp -= this.speed * 40;
+                    const rand = Math.random();
 
-                    // this.target.velocity = Utils.sub(this.position, target.position);
+                    if (rand > 0.8) {
+                        this.target.hp = 0; // Instant kill
+                    } else if (rand > 0.2) {
+                        this.target.hp -= this.speed * 40;
+                    }
+
                     if (this.target.hp <= 0) {
                         this.target.alive = false;
+
+                        this.target.army.handleSoldierDeath();
                     }
 
                     this.attackCooldown = COOLDOWN_FRAME;
@@ -147,9 +154,6 @@ module.exports = class Horseman extends Soldier {
                 if (f === this || !f.alive) {
                     return;
                 }
-
-                // this.velocity.y += 0.02 * (f.velocity.y - this.velocity.y);
-                // this.velocity.x += 0.02 * (f.velocity.x - this.velocity.x);
 
                 const xDiff = f.position.x - this.position.x;
                 const yDiff = f.position.y - this.position.y;
@@ -179,7 +183,7 @@ module.exports = class Horseman extends Soldier {
 
         if (attackWeapon.type === 'spear') {
             if (angle < -0.7) {
-                if (rand > 0.5) {
+                if (rand > 0.4) {
                     damage = Math.abs(relativeClosingSpeed) * 30;
                 }
             } else {
@@ -206,6 +210,8 @@ module.exports = class Horseman extends Soldier {
 
             if (this.hp <= 0) {
                 this.alive = false;
+
+                this.army.handleSoldierDeath();
             }
         }
     }

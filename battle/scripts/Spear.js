@@ -1,9 +1,10 @@
 const Utils = require('./Utils');
+const Weapon = require('./Weapon');
 
-const Constants = require('./Constants');
-
-module.exports = class Spear {
+module.exports = class Spear extends Weapon {
     constructor() {
+        super();
+
         this.length = 60;
         this.minRange = 40;
 
@@ -76,42 +77,13 @@ module.exports = class Spear {
         }
     }
 
-    attack() {
-        if (this.status === 'holding') {
-            this.status = 'out';
-        }
-    }
-
-    defend(attackWeapon, attackAngle) {
-        const blockChance = Constants.BLOCK_CHANCE[this.type];
-
-        const rand = Math.random();
-
-        if (attackAngle < blockChance.angle) {
-            if (rand > blockChance[attackWeapon.type]) {
-                return attackWeapon.damage;
-            }
-        } else {
-            if (rand > 0.2) {
-                return attackWeapon.damage;
-            }
-        }
-
-        return 0;
-    }
-
-
     render(ctx) {
-
-        // this.offsetAngle = Math.PI / 4 * (1 - this.currAttackFrame / 30);
         ctx.save();
         ctx.translate(0, this.offsetPos);
-        // ctx.rotate(this.offsetAngle);
 
         ctx.beginPath();
         ctx.moveTo(this.startPos.x, this.startPos.y - this.length);
         ctx.lineTo(this.startPos.x, this.startPos.y);
-        // ctx.lineTo(this.startPos.x - 2, this.startPos.y - this.length + 2);
         ctx.closePath();
         ctx.stroke();
 
