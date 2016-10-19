@@ -70,23 +70,23 @@ function loadPreset2() {
     ];
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(200, 120 + 15 * i, 'sword'));
+        state.redArmy.addSoldier(new Soldier(200 + Math.random() * 2, 120 + 15 * i, 'sword'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(220, 125 + 15 * i, 'sword'));
+        state.redArmy.addSoldier(new Soldier(220 + Math.random() * 2, 125 + 15 * i, 'sword'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(240, 130 + 15 * i, 'sword'));
+        state.redArmy.addSoldier(new Soldier(240 + Math.random() * 2, 130 + 15 * i, 'sword'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(260, 125 + 15 * i, 'sword'));
+        state.redArmy.addSoldier(new Soldier(260 + Math.random() * 2, 125 + 15 * i, 'sword'));
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(750, i * 30 + 215);
+        const horseman = new Horseman(750 + Math.random() * 2, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -95,7 +95,7 @@ function loadPreset2() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(800, i * 30 + 200);
+        const horseman = new Horseman(800 + Math.random() * 2, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -104,7 +104,7 @@ function loadPreset2() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(850, i * 30 + 215);
+        const horseman = new Horseman(850 + Math.random() * 2, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -113,7 +113,7 @@ function loadPreset2() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(900, i * 30 + 200);
+        const horseman = new Horseman(900 + Math.random() * 2, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -129,23 +129,23 @@ function loadPreset3() {
     ];
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(200, 120 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(200 + Math.random() * 2, 120 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(220, 125 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(220 + Math.random() * 2, 125 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(240, 130 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(240 + Math.random() * 2, 130 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(260, 125 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(260 + Math.random() * 2, 125 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(750, i * 30 + 215);
+        const horseman = new Horseman(750 + Math.random() * 2, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -154,7 +154,7 @@ function loadPreset3() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(800, i * 30 + 200);
+        const horseman = new Horseman(800 + Math.random() * 2, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -163,7 +163,7 @@ function loadPreset3() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(850, i * 30 + 215);
+        const horseman = new Horseman(850 + Math.random() * 2, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -172,7 +172,7 @@ function loadPreset3() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(900, i * 30 + 200);
+        const horseman = new Horseman(900 + Math.random() * 2, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -191,23 +191,23 @@ function loadPreset4() {
     ];
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(200, 120 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(200 + Math.random() * 2, 120 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(220, 125 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(220 + Math.random() * 2, 125 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(240, 130 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(240 + Math.random() * 2, 130 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 40; i++) {
-        state.redArmy.addSoldier(new Soldier(260, 125 + 15 * i, 'spear'));
+        state.redArmy.addSoldier(new Soldier(260 + Math.random() * 2, 125 + 15 * i, 'spear'));
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(750, i * 30 + 215);
+        const horseman = new Horseman(750 + Math.random() * 2, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -216,7 +216,7 @@ function loadPreset4() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(800, i * 30 + 200);
+        const horseman = new Horseman(800 + Math.random() * 2, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -225,7 +225,7 @@ function loadPreset4() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(850, i * 30 + 215);
+        const horseman = new Horseman(850 + Math.random() * 2, i * 30 + 215);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -234,7 +234,7 @@ function loadPreset4() {
     }
 
     for (let i = 0; i < 15; i++) {
-        const horseman = new Horseman(900, i * 30 + 200);
+        const horseman = new Horseman(900 + Math.random() * 2, i * 30 + 200);
         horseman.facing = {
             x: -1,
             y: 0,
@@ -415,6 +415,7 @@ const keySoliderMapping = {
     1: 'swordsman',
     2: 'spearman',
     3: 'shieldman',
+    4: 'horseman',
 }
 
 window.onkeydown = (evt) => {
