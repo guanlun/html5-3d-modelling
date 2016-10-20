@@ -40,25 +40,55 @@ objLoader.load('obj/jelly.obj', obj => {
         if (child.type === 'Mesh') {
             const jelly = child;
 
-            jelly.material = new THREE.MeshBasicMaterial({
+            simulator.setGeometry(jelly);
+
+            const mesh = new THREE.Mesh(simulator.geometry, new THREE.MeshBasicMaterial({
                 color: 0x6666FF,
                 wireframe: true,
-            });
-            scene.add(jelly);
+            }));
 
-            const jellyGeometry = new THREE.Geometry().fromBufferGeometry(jelly.geometry);
-            jellyGeometry.faces.forEach(f => {
-                const v1 = jellyGeometry.vertices[f.a];
-                const v2 = jellyGeometry.vertices[f.b];
-                const v3 = jellyGeometry.vertices[f.c];
+            scene.add(mesh);
 
-                console.log(v1, v2, v3);
-            });
-
-            props.jelly = jelly;
+            props.jelly = mesh;
         }
     });
-})
+});
+
+// $.get('obj/jelly.obj', objData => {
+//     const jellyObj = {};
+//     const vertices = [];
+//
+//     const objLines = objData.split('\n');
+//
+//     for (let i = 0; i < objLines.length; i++) {
+//         const line = objLines[i];
+//
+//         if (line[0] === '#' || line[0] === 'o' || line[0] === 's') {
+//             continue;
+//         }
+//
+//         const segs = line.split(' ');
+//         const dataType = segs[0];
+//
+//         if (dataType === 'v') {
+//             vertices.push({
+//                 x: parseFloat(segs[1]),
+//                 y: parseFloat(segs[2]),
+//                 z: parseFloat(segs[3]),
+//             });
+//         } else if (dataType === 'f') {
+//             for (let vI = 1; vI < segs.length; vI++) {
+//                 const ref = segs[vI];
+//
+//                 const vSegs = ref.split('/');
+//                 const vRef = parseInt(vSegs[0]) - 1;
+//                 const nRef = parseInt(vSegs[2]) - 1;
+//
+//                 console.log(vRef);
+//             }
+//         }
+//     }
+// });
 
 renderer.setSize(WIDTH, HEIGHT);
 renderer.setClearColor(0xffffff, 1);
