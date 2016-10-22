@@ -10,9 +10,9 @@ const props = {
 
     camera: null,
     cameraPos: {
-        x: 0,
+        x: 10,
         y: 0,
-        z: 20,
+        z: 0,
     },
 
     dragging: false,
@@ -35,60 +35,77 @@ const mouseVec = new THREE.Vector2();
 const textureLoader = new THREE.TextureLoader();
 const objLoader = new THREE.OBJLoader();
 
-objLoader.load('obj/jelly.obj', obj => {
-    obj.traverse(child => {
-        if (child.type === 'Mesh') {
-            const jelly = child;
-
-            simulator.setGeometry(jelly);
-
-            const mesh = new THREE.Mesh(simulator.geometry, new THREE.MeshBasicMaterial({
-                color: 0x6666FF,
-                wireframe: true,
-            }));
-
-            scene.add(mesh);
-
-            props.jelly = mesh;
-        }
-    });
-});
-
-// $.get('obj/jelly.obj', objData => {
-//     const jellyObj = {};
-//     const vertices = [];
+// objLoader.load('obj/box.obj', obj => {
+//     obj.traverse(child => {
+//         if (child.type === 'Mesh') {
+//             const jelly = child;
 //
-//     const objLines = objData.split('\n');
+//             simulator.setGeometry(jelly);
 //
-//     for (let i = 0; i < objLines.length; i++) {
-//         const line = objLines[i];
+//             const mesh = new THREE.Mesh(simulator.geometry, new THREE.MeshBasicMaterial({
+//                 color: 0x6666FF,
+//                 wireframe: true,
+//             }));
 //
-//         if (line[0] === '#' || line[0] === 'o' || line[0] === 's') {
-//             continue;
+//             scene.add(mesh);
+//
+//             props.jelly = mesh;
 //         }
-//
-//         const segs = line.split(' ');
-//         const dataType = segs[0];
-//
-//         if (dataType === 'v') {
-//             vertices.push({
-//                 x: parseFloat(segs[1]),
-//                 y: parseFloat(segs[2]),
-//                 z: parseFloat(segs[3]),
-//             });
-//         } else if (dataType === 'f') {
-//             for (let vI = 1; vI < segs.length; vI++) {
-//                 const ref = segs[vI];
-//
-//                 const vSegs = ref.split('/');
-//                 const vRef = parseInt(vSegs[0]) - 1;
-//                 const nRef = parseInt(vSegs[2]) - 1;
-//
-//                 console.log(vRef);
-//             }
-//         }
-//     }
+//     });
 // });
+
+$.get('obj/box.obj', objData => {
+    const jellyObj = {};
+    const vertices = [];
+
+    const objLines = objData.split('\n');
+
+    for (let i = 0; i < objLines.length; i++) {
+        const line = objLines[i];
+
+        if (line[0] === '#' || line[0] === 'o' || line[0] === 's') {
+            continue;
+        }
+
+        const segs = line.split(' ');
+        const dataType = segs[0];
+
+        if (dataType === 'v') {
+            simulator.addVertex({
+                x: parseFloat(segs[1]),
+                y: parseFloat(segs[2]),
+                z: parseFloat(segs[3]),
+            });
+        } else if (dataType === 'f') {
+            const face = {
+                vertices: [],
+            };
+
+            for (let vI = 1; vI < segs.length; vI++) {
+                const ref = segs[vI];
+
+                const vSegs = ref.split('/');
+                const vRef = parseInt(vSegs[0]) - 1;
+                const nRef = parseInt(vSegs[2]) - 1;
+
+                face.vertices.push(vRef);
+                // console.log(vRef);
+            }
+
+            simulator.addFace(face);
+        }
+    }
+    simulator.createGeometry();
+
+    const mesh = new THREE.Mesh(simulator.geometry, new THREE.MeshBasicMaterial({
+        color: 0x6666FF,
+        wireframe: true,
+    }));
+
+    scene.add(mesh);
+
+    props.jelly = mesh;
+});
 
 renderer.setSize(WIDTH, HEIGHT);
 renderer.setClearColor(0xffffff, 1);
