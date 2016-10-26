@@ -23,11 +23,27 @@ module.exports = class VecMath {
         return vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
     }
 
+    static cross(vec1, vec2) {
+        return {
+            x: vec1.y * vec2.z - vec1.z * vec2.y,
+            y: vec1.z * vec2.x - vec1.x * vec2.z,
+            z: vec1.x * vec2.y - vec1.y * vec2.x,
+        };
+    }
+
     static scalarMult(s, v) {
         return {
             x: s * v.x,
             y: s * v.y,
             z: s * v.z,
+        };
+    }
+
+    static scalarDiv(v, s) {
+        return {
+            x: v.x / s,
+            y: v.y / s,
+            z: v.z / s,
         };
     }
 

@@ -1,5 +1,6 @@
 const Constants = require('./Constants');
 const Strut = require('./Strut');
+const TorsionalStrut = require('./TorsionalStrut');
 
 module.exports = class Simulator {
     constructor() {
@@ -36,8 +37,6 @@ module.exports = class Simulator {
 
         for (let si = 0; si < this._struts.length; si++) {
             const strut = this._struts[si];
-
-            // console.log(strut);
 
             strut.simulate();
         }
@@ -94,64 +93,83 @@ module.exports = class Simulator {
 
             let vertexIndex = face.vertices[0];
             let vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 6].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
+            this.geometry.vertices[fi * 3].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
 
             vertexIndex = face.vertices[1];
             vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 6 + 1].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
+            this.geometry.vertices[fi * 3 + 1].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
 
             vertexIndex = face.vertices[2];
             vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 6 + 2].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
-
-            vertexIndex = face.vertices[0];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 6 + 3].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
-
-            vertexIndex = face.vertices[2];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 6 + 4].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
-
-            vertexIndex = face.vertices[3];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 6 + 5].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
+            this.geometry.vertices[fi * 3 + 2].set(vertex.pos.x, vertex.pos.y, vertex.pos.z);
         }
     }
 
     createGeometry() {
         this.geometry = new THREE.Geometry();
 
+        const vertexFaceLookup = {};
+
         for (let fi = 0; fi < this.faces.length; fi++) {
             const face =  this.faces[fi];
 
-            let vertexIndex = face.vertices[0];
-            let vertex = this.vertices[vertexIndex];
-            this.geometry.vertices.push(new THREE.Vector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
-            vertexIndex = face.vertices[1];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices.push(new THREE.Vector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
-            vertexIndex = face.vertices[2];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices.push(new THREE.Vector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
-            vertexIndex = face.vertices[0];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices.push(new THREE.Vector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
-            vertexIndex = face.vertices[2];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices.push(new THREE.Vector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
-            vertexIndex = face.vertices[3];
-            vertex = this.vertices[vertexIndex];
-            this.geometry.vertices.push(new THREE.Vector3(vertex.pos.x, vertex.pos.y, vertex.pos.z));
+            const vertexIndex1 = face.vertices[0];
+            const vertex1 = this.vertices[vertexIndex1];
+            this.geometry.vertices.push(new THREE.Vector3(vertex1.pos.x, vertex1.pos.y, vertex1.pos.z));
 
-            this.geometry.faces.push(new THREE.Face3(fi * 6, fi * 6 + 1, fi * 6 + 2));
-            this.geometry.faces.push(new THREE.Face3(fi * 6 + 3, fi * 6 + 4, fi * 6 + 5));
+            const vertexIndex2 = face.vertices[1];
+            const vertex2 = this.vertices[vertexIndex2];
+            this.geometry.vertices.push(new THREE.Vector3(vertex2.pos.x, vertex2.pos.y, vertex2.pos.z));
 
-            this._struts.push(new Strut(this.vertices[face.vertices[0]], this.vertices[face.vertices[1]]));
-            this._struts.push(new Strut(this.vertices[face.vertices[1]], this.vertices[face.vertices[2]]));
-            this._struts.push(new Strut(this.vertices[face.vertices[2]], this.vertices[face.vertices[3]]));
-            this._struts.push(new Strut(this.vertices[face.vertices[3]], this.vertices[face.vertices[0]]));
-            this._struts.push(new Strut(this.vertices[face.vertices[0]], this.vertices[face.vertices[2]]));
-            this._struts.push(new Strut(this.vertices[face.vertices[1]], this.vertices[face.vertices[3]]));
+            const vertexIndex3 = face.vertices[2];
+            const vertex3 = this.vertices[vertexIndex3];
+            this.geometry.vertices.push(new THREE.Vector3(vertex3.pos.x, vertex3.pos.y, vertex3.pos.z));
+
+            this.geometry.faces.push(new THREE.Face3(fi * 3, fi * 3 + 1, fi * 3 + 2));
+
+            this._struts.push(new Strut(vertex1, vertex2));
+            this._struts.push(new Strut(vertex1, vertex3));
+            this._struts.push(new Strut(vertex2, vertex3));
+
+            let lookupKey;
+            if (vertexIndex1 > vertexIndex2) {
+                lookupKey = vertexIndex2 + '-' + vertexIndex1;
+            } else {
+                lookupKey = vertexIndex1 + '-' + vertexIndex2;
+            }
+
+            let remVertexIndex = vertexFaceLookup[lookupKey];
+            if (remVertexIndex === undefined) {
+                vertexFaceLookup[lookupKey] = vertexIndex3;
+            } else {
+                this._struts.push(new TorsionalStrut(vertex1, vertex2, vertex3, this.vertices[remVertexIndex]));
+            }
+
+            if (vertexIndex1 > vertexIndex3) {
+                lookupKey = vertexIndex3 + '-' + vertexIndex1;
+            } else {
+                lookupKey = vertexIndex1 + '-' + vertexIndex3;
+            }
+
+            remVertexIndex = vertexFaceLookup[lookupKey];
+            if (remVertexIndex === undefined) {
+                vertexFaceLookup[lookupKey] = vertexIndex2;
+            } else {
+                this._struts.push(new TorsionalStrut(vertex1, vertex3, vertex2, this.vertices[remVertexIndex]));
+            }
+
+            if (vertexIndex2 > vertexIndex3) {
+                lookupKey = vertexIndex3 + '-' + vertexIndex2;
+            } else {
+                lookupKey = vertexIndex2 + '-' + vertexIndex3;
+            }
+
+            remVertexIndex = vertexFaceLookup[lookupKey];
+            if (remVertexIndex === undefined) {
+                vertexFaceLookup[lookupKey] = vertexIndex1;
+            } else {
+                this._struts.push(new TorsionalStrut(vertex2, vertex3, vertex1, this.vertices[remVertexIndex]));
+            }
         }
     }
 
