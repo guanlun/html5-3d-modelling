@@ -54,7 +54,7 @@ const objLoader = new THREE.OBJLoader();
 //     });
 // });
 
-$.get('obj/box.obj', objData => {
+$.get('obj/jelly.obj', objData => {
     const jellyObj = {};
     const vertices = [];
 
