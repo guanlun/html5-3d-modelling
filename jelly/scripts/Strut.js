@@ -17,8 +17,8 @@ module.exports = class Strut {
 
         const disp = currDist - this.l0;
 
-        const acc1 = VecMath.add(VecMath.scalarMult(this.springCoeff * disp, dir), VecMath.scalarMult(-0.002, this.v1.vel));
-        const acc2 = VecMath.add(VecMath.scalarMult(-this.springCoeff * disp, dir), VecMath.scalarMult(-0.002, this.v2.vel));
+        const acc1 = VecMath.add(VecMath.scalarMult(this.springCoeff * disp, dir), VecMath.scalarMult(-0.001, this.v1.vel));
+        const acc2 = VecMath.add(VecMath.scalarMult(-this.springCoeff * disp, dir), VecMath.scalarMult(-0.001, this.v2.vel));
 
         this.v1.acc = VecMath.add(this.v1.acc, acc1);
         this.v2.acc = VecMath.add(this.v2.acc, acc2);

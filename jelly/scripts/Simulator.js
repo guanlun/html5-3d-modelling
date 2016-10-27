@@ -181,9 +181,9 @@ module.exports = class Simulator {
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
 
-            vertex.vel = VecMath.scalarMult(t / 6, VecMath.add(k1[vi], VecMath.scalarMult(2, k2[vi]), VecMath.scalarMult(2, k3[vi]), k4[vi]));
+            vertex.vel = VecMath.scalarMult(1 / 6, VecMath.add(k1[vi], VecMath.scalarMult(2, k2[vi]), VecMath.scalarMult(2, k3[vi]), k4[vi]));
 
-            vertex.pos = VecMath.add(vertex.pos, vertex.vel);
+            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t, vertex.vel));
         }
     }
 
@@ -202,13 +202,13 @@ module.exports = class Simulator {
         this.geometry.verticesNeedUpdate = true;
     }
 
-    addVertex(vertexPos) {
+    addVertex(vertexPos, vertexVel) {
         const vertexData = {
             pos: vertexPos,
             vel: {
-                x: 0,
-                y: 0,
-                z: 0,
+                x: vertexVel.x,
+                y: vertexVel.y,
+                z: vertexVel.z,
             },
             acc: {
                 x: 0,
