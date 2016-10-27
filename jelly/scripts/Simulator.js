@@ -86,7 +86,6 @@ module.exports = class Simulator {
 
             } else {
                 vertex.vel = VecMath.add(vertex.vel, VecMath.scalarMult(t, vertex.acc));
-                // vertex.vel = VecMath.add(this.lastState[vi].vel, VecMath.scalarMult(t, vertex.acc));
             }
         }
     }
@@ -187,15 +186,25 @@ module.exports = class Simulator {
         }
     }
 
-    simulate(t) {
+
+
+    simulate(t, objects) {
         if (!this.geometry) {
             return;
         }
 
         this.saveState();
 
-        // this.euler(t);
-        this.rk4(t);
+        this.euler(t);
+        // this.rk4(t);
+
+        // objects.forEach(o => {
+        //     if (o === this) {
+        //         return;
+        //     }
+        //
+        //     this.checkVertexFaceCollision(this, o);
+        // });
 
         this.updateGeometry();
 

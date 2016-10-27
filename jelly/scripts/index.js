@@ -1,5 +1,6 @@
 const Constants = require('./Constants');
 const Simulator = require('./Simulator');
+const VecMath = require('./VecMath');
 const scene = new THREE.Scene();
 
 const WIDTH = 1000;
@@ -57,6 +58,10 @@ function loadObj(filename, initPos, initVel, callback) {
                     y: parseFloat(segs[2]) + initPos.y,
                     z: parseFloat(segs[3]) + initPos.z,
                 }, initVel);
+            } else if (dataType === 'vn') {
+                // simulator.addNormal({
+                //
+                // });
             } else if (dataType === 'f') {
                 const face = {
                     vertices: [],
@@ -85,8 +90,8 @@ loadObj('obj/box.obj', {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
-        color: 0x6666FF,
-        wireframe: true,
+        color: 'red',
+        // wireframe: true,
     }));
 
     scene.add(mesh);
@@ -193,10 +198,73 @@ function initLight() {
 initCamera();
 initLight();
 
+function pointInTriangle(px, py, pz, vertices) {
+    const p1 = vertices[0];
+    const p2 = vertices[1];
+    const p3 = vertices[2];
+
+    // console.log(p1);
+
+    const a = ((p2.z - p3.z) * (px - p3.x) + (p3.x - p2.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
+    const b = ((p3.z - p1.z) * (px - p3.x) + (p1.x - p3.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
+    const c = 1 - a - b;
+
+    return (a > 0) && (b > 0) && (c > 0);
+}
+
+let simulating = true;
+
+function checkVertexFaceCollision(timestep, obj1, obj2) {
+    for (let vi = 0; vi < obj1.vertices.length; vi++) {
+        const vertex = obj1.vertices[vi];
+        const vertexLastState = obj1.lastState[vi];
+
+        for (let fi = 0; fi < obj2.faces.length; fi++) {
+            const face = obj2.faces[fi];
+
+            const faceV1 = obj2.vertices[face.vertices[0]].pos;
+            const faceV2 = obj2.vertices[face.vertices[1]].pos;
+            const faceV3 = obj2.vertices[face.vertices[2]].pos;
+
+            const face12 = VecMath.sub(faceV2, faceV1);
+            const face13 = VecMath.sub(faceV3, faceV1);
+
+            const faceNormal = VecMath.normalize(VecMath.cross(face12, face13));
+
+            const lastPosDot = VecMath.dot(faceNormal, VecMath.sub(vertexLastState.pos, faceV1));
+            const currPosDot = VecMath.dot(faceNormal, VecMath.sub(vertex.pos, faceV1));
+
+            if (lastPosDot * currPosDot < 0) {
+                const candidateCollisionTimeFraction = lastPosDot / (lastPosDot - currPosDot);
+
+                const collisionPos = VecMath.add(vertexLastState.pos, VecMath.scalarMult(timestep * candidateCollisionTimeFraction, vertex.vel));
+
+                if (pointInTriangle(collisionPos.x, collisionPos.y, collisionPos.z, [faceV1, faceV2, faceV3])) {
+                    console.log(vertexLastState.pos, vertex.pos);
+                    console.log([faceV1, faceV2, faceV3]);
+                    console.log(faceNormal);
+                    simulating = false;
+                }
+            }
+        }
+    }
+}
+
 function simulate() {
-    objectSimulators.forEach(simulator => {
-        simulator.simulate(0.1);
-    });
+    if (simulating) {
+        const timestep = 0.1;
+
+        objectSimulators.forEach(simulator => {
+            simulator.simulate(timestep, objectSimulators);
+        });
+
+        if (objectSimulators.length === 2) {
+            const obj1 = objectSimulators[0];
+            const obj2 = objectSimulators[1];
+
+            checkVertexFaceCollision(timestep, obj2, obj1);
+        }
+    }
 
     renderer.render(scene, props.camera);
 
