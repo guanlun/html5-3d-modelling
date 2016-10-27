@@ -203,9 +203,7 @@ initObjects();
 initLight();
 
 function simulate() {
-    for (let i = 0; i < props.stepsPerFrame; i++) {
-        simulator.simulate(0.01 / props.stepsPerFrame);
-    }
+    simulator.simulate(1);
 
     if (props.pointLight.intensity !== 0) {
         props.pointLight.intensity = Math.random() * 160 + 60;

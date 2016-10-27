@@ -3,12 +3,20 @@ module.exports = class VecMath {
         return Math.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
     }
 
-    static add(vec1, vec2) {
-        return {
-            x: vec1.x + vec2.x,
-            y: vec1.y + vec2.y,
-            z: vec1.z + vec2.z,
+    static add() {
+        const result = {
+            x: 0,
+            y: 0,
+            z: 0,
         };
+
+        for (let i = 0; i < arguments.length; i++) {
+            const v = arguments[i];
+            result.x += v.x;
+            result.y += v.y;
+            result.z += v.z;
+        }
+        return result;
     }
 
     static sub(vec1, vec2) {

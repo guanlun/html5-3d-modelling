@@ -1,4 +1,5 @@
 const Constants = require('./Constants');
+const VecMath = require('./VecMath');
 const Strut = require('./Strut');
 const TorsionalStrut = require('./TorsionalStrut');
 
@@ -11,51 +12,190 @@ module.exports = class Simulator {
         this.faces = [];
     }
 
-    simulate() {
-        if (!this.geometry) {
-            return;
-        }
-        // console.log('sim');
+    saveState() {
+        this.lastState = [];
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
-
-            if (vertex.pos.y === 0) {
-                continue;
-            }
-
-            vertex.vel.y -= 0.001;
-
             vertex.acc.x = 0;
             vertex.acc.y = 0;
             vertex.acc.z = 0;
 
-            // vertex.pos.x += vertex.vel.x;
-            // vertex.pos.y += vertex.vel.y;
-            // vertex.pos.z += vertex.vel.z;
+            this.lastState.push({
+                pos: {
+                    x: vertex.pos.x,
+                    y: vertex.pos.y,
+                    z: vertex.pos.z,
+                },
+                vel: {
+                    x: vertex.vel.x,
+                    y: vertex.vel.y,
+                    z: vertex.vel.z,
+                },
+                // acc: {
+                //     x: 0,
+                //     y: 0,
+                //     z: 0,
+                // },
+            });
+        }
+    }
+
+    restoreState() {
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+            const savedVertex = this.lastState[vi];
+
+            vertex.pos.x = savedVertex.pos.x;
+            vertex.pos.y = savedVertex.pos.y;
+            vertex.pos.z = savedVertex.pos.z;
+        }
+    }
+
+    restoreVel() {
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+            const savedVertex = this.lastState[vi];
+
+            vertex.vel.x = savedVertex.vel.x;
+            vertex.vel.y = savedVertex.vel.y;
+            vertex.vel.z = savedVertex.vel.z;
+        }
+    }
+
+    computeSystemDynamics(t) {
+        const k = [];
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+            vertex.acc.x = 0;
+            vertex.acc.y = -0.01;
+            vertex.acc.z = 0;
         }
 
         for (let si = 0; si < this._struts.length; si++) {
             const strut = this._struts[si];
 
-            strut.simulate();
+            strut.simulate(t);
         }
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
 
             if (vertex.pos.y === 0) {
-                continue;
+
+            } else {
+                vertex.vel = VecMath.add(vertex.vel, VecMath.scalarMult(t, vertex.acc));
+                // vertex.vel = VecMath.add(this.lastState[vi].vel, VecMath.scalarMult(t, vertex.acc));
             }
-
-            vertex.vel.x += vertex.acc.x;
-            vertex.vel.y += vertex.acc.y;
-            vertex.vel.z += vertex.acc.z;
-
-            vertex.pos.x += vertex.vel.x;
-            vertex.pos.y += vertex.vel.y;
-            vertex.pos.z += vertex.vel.z;
         }
+    }
+
+    euler(t) {
+        this.computeSystemDynamics(t);
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+
+            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t, vertex.vel));
+        }
+    }
+
+    rk4(t) {
+        // k1
+        this.computeSystemDynamics(t / 2);
+
+        const k1 = [];
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+
+            k1.push({
+                x: vertex.vel.x,
+                y: vertex.vel.y,
+                z: vertex.vel.z,
+            });
+
+            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
+        }
+
+        // k2
+        this.computeSystemDynamics(t / 2);
+
+        const k2 = [];
+
+        this.restoreState();
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+
+            k2.push({
+                x: vertex.vel.x,
+                y: vertex.vel.y,
+                z: vertex.vel.z,
+            });
+
+            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
+        }
+
+        // this.restoreVel();
+
+        // k3
+        this.computeSystemDynamics(t / 2);
+
+        const k3 = [];
+
+        this.restoreState();
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+
+            k3.push({
+                x: vertex.vel.x,
+                y: vertex.vel.y,
+                z: vertex.vel.z,
+            });
+
+            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
+        }
+
+        // this.restoreVel();
+
+        // k4
+        this.computeSystemDynamics(t);
+
+        const k4 = [];
+
+        this.restoreState();
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+
+            k4.push({
+                x: vertex.vel.x,
+                y: vertex.vel.y,
+                z: vertex.vel.z,
+            });
+        }
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+
+            vertex.vel = VecMath.scalarMult(t / 6, VecMath.add(k1[vi], VecMath.scalarMult(2, k2[vi]), VecMath.scalarMult(2, k3[vi]), k4[vi]));
+
+            vertex.pos = VecMath.add(vertex.pos, vertex.vel);
+        }
+    }
+
+    simulate(t) {
+        if (!this.geometry) {
+            return;
+        }
+
+        this.saveState();
+
+        // this.euler(t);
+        this.rk4(t);
 
         this.updateGeometry();
 
@@ -77,10 +217,6 @@ module.exports = class Simulator {
             },
         };
         this.vertices.push(vertexData);
-    }
-
-    addStrut() {
-
     }
 
     addFace(face) {
@@ -111,7 +247,7 @@ module.exports = class Simulator {
         const vertexFaceLookup = {};
 
         for (let fi = 0; fi < this.faces.length; fi++) {
-            const face =  this.faces[fi];
+            const face = this.faces[fi];
 
             const vertexIndex1 = face.vertices[0];
             const vertex1 = this.vertices[vertexIndex1];
@@ -171,31 +307,5 @@ module.exports = class Simulator {
                 this._struts.push(new TorsionalStrut(vertex2, vertex3, vertex1, this.vertices[remVertexIndex]));
             }
         }
-    }
-
-    setGeometry(object) {
-        this.geometry = new THREE.Geometry().fromBufferGeometry(object.geometry);
-        this.geometry.vertices.forEach(v => {
-            v.acc = {
-                x: 0,
-                y: -0.002,
-                z: 0,
-            };
-            v.vel = {
-                x: 0,
-                y: 0,
-                z: 0,
-            };
-        });
-
-        this.geometry.faces.forEach(f => {
-            const v1 = this.geometry.vertices[f.a];
-            const v2 = this.geometry.vertices[f.b];
-            const v3 = this.geometry.vertices[f.c];
-
-            this._struts.push(new Strut(v1, v2));
-            this._struts.push(new Strut(v1, v3));
-            this._struts.push(new Strut(v2, v3));
-        });
     }
 }
