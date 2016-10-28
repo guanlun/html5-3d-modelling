@@ -102,11 +102,11 @@ module.exports = class Simulator {
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
 
-            if (vertex.pos.y === 0) {
-
-            } else {
+            // if (vertex.pos.y === 0) {
+            //
+            // } else {
                 vertex.vel = VecMath.add(vertex.vel, VecMath.scalarMult(t, vertex.acc));
-            }
+            // }
         }
     }
 
@@ -289,6 +289,8 @@ module.exports = class Simulator {
             this.geometry.vertices.push(new THREE.Vector3(vertex3.pos.x, vertex3.pos.y, vertex3.pos.z));
 
             this.geometry.faces.push(new THREE.Face3(fi * 3, fi * 3 + 1, fi * 3 + 2));
+
+            // console.log(vertexIndex1, vertexIndex2, vertexIndex3);
 
             this.edges.push([vertexIndex1, vertexIndex2]);
             this.edges.push([vertexIndex1, vertexIndex3]);
