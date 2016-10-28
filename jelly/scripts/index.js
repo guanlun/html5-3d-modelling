@@ -91,13 +91,13 @@ loadObj('obj/box.obj', {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
         color: 'red',
-        // wireframe: true,
+        wireframe: true,
     }));
 
     scene.add(mesh);
 });
 
-loadObj('obj/box_r.obj', {x: 8, y: 5, z: 0}, {x: -0.3, y: 0, z: 0}, obj => {
+loadObj('obj/box_r.obj', {x: 4, y: 3, z: 0}, {x: -0.2, y: 0, z: 0}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -203,8 +203,6 @@ function pointInTriangle(px, py, pz, vertices) {
     const p2 = vertices[1];
     const p3 = vertices[2];
 
-    // console.log(p1);
-
     const a = ((p2.z - p3.z) * (px - p3.x) + (p3.x - p2.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
     const b = ((p3.z - p1.z) * (px - p3.x) + (p1.x - p3.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
     const c = 1 - a - b;
@@ -214,7 +212,100 @@ function pointInTriangle(px, py, pz, vertices) {
 
 let simulating = true;
 
+function checkCollsion(timestep, obj1, obj2) {
+    const collisions = [];
+    // collisions.push(checkVertexFaceCollision(timestep, obj1, obj2));
+    // collisions.push(checkVertexFaceCollision(timestep, obj2, obj1));
+    collisions.push(checkEdgeEdgeCollision(timestep, obj1, obj2));
+
+    let earliestCollisionTime = Number.MAX_VALUE;
+    let earliestCollision;
+
+    for (let ci = 0; ci < collisions.length; ci++) {
+        const collision = collisions[ci];
+
+        if (collision && collision.time < earliestCollisionTime) {
+            earliestCollisionTime = collision.time;
+
+            earliestCollision = collision;
+        }
+    }
+
+    return earliestCollision;
+}
+
+function getEdgeDistance(p1, p2, q1, q2) {
+    const a = VecMath.sub(p2, p1);
+    const a_u = VecMath.normalize(a);
+
+    const b = VecMath.sub(q2, q1);
+    const b_u = VecMath.normalize(b);
+
+    const n_u = VecMath.normalize(VecMath.cross(a, b));
+
+    const r = VecMath.sub(q1, p1);
+
+    const crossBN = VecMath.cross(b_u, n_u);
+    const crossAN = VecMath.cross(a_u, n_u);
+
+    const s = VecMath.dot(r, crossBN) / VecMath.dot(a, crossBN);
+    const t = -VecMath.dot(r, crossAN) / VecMath.dot(b, crossAN);
+
+    if (s < 0 || s > 1 || t < 0 || t > 1) {
+        return undefined;
+    }
+
+    const pa = VecMath.add(p1, VecMath.scalarMult(s, a));
+    const qa = VecMath.add(q1, VecMath.scalarMult(t, b));
+
+    const m = VecMath.sub(qa, pa);
+
+    return m;
+}
+
+function checkEdgeEdgeCollision(timestep, obj1, obj2) {
+    for (let i = 0; i < obj1.edges.length; i++) {
+        const edge1 = obj1.edges[i];
+
+        const p1 = obj1.vertices[edge1[0]].pos;
+        const p2 = obj1.vertices[edge1[1]].pos;
+
+        const lastP1 = obj1.lastState[edge1[0]].pos;
+        const lastP2 = obj1.lastState[edge1[1]].pos;
+
+        for (let j = 0; j < obj2.edges.length; j++) {
+            const edge2 = obj2.edges[j];
+
+            const q1 = obj2.vertices[edge2[0]].pos;
+            const q2 = obj2.vertices[edge2[1]].pos;
+
+            const lastQ1 = obj2.lastState[edge2[0]].pos;
+            const lastQ2 = obj2.lastState[edge2[1]].pos;
+
+            const currDiff = getEdgeDistance(p1, p2, q1, q2);
+            const lastDiff = getEdgeDistance(lastP1, lastP2, lastQ1, lastQ2);
+
+            if (currDiff === undefined || lastDiff === undefined) {
+                continue;
+            }
+
+            const distDot = VecMath.dot(currDiff, lastDiff);
+
+            if (distDot < 0) {
+                console.log('col!!!');
+            }
+
+            if (Math.random() < 0.001) {
+                console.log(distDot);
+            }
+        }
+    }
+}
+
 function checkVertexFaceCollision(timestep, obj1, obj2) {
+    let earliestCollisionTime = timestep;
+    let collision;
+
     for (let vi = 0; vi < obj1.vertices.length; vi++) {
         const vertex = obj1.vertices[vi];
         const vertexLastState = obj1.lastState[vi];
@@ -222,47 +313,86 @@ function checkVertexFaceCollision(timestep, obj1, obj2) {
         for (let fi = 0; fi < obj2.faces.length; fi++) {
             const face = obj2.faces[fi];
 
-            const faceV1 = obj2.vertices[face.vertices[0]].pos;
-            const faceV2 = obj2.vertices[face.vertices[1]].pos;
-            const faceV3 = obj2.vertices[face.vertices[2]].pos;
+            const faceV1 = obj2.vertices[face.vertices[0]];
+            const faceV2 = obj2.vertices[face.vertices[1]];
+            const faceV3 = obj2.vertices[face.vertices[2]];
 
-            const face12 = VecMath.sub(faceV2, faceV1);
-            const face13 = VecMath.sub(faceV3, faceV1);
+            const face12 = VecMath.sub(faceV2.pos, faceV1.pos);
+            const face13 = VecMath.sub(faceV3.pos, faceV1.pos);
 
             const faceNormal = VecMath.normalize(VecMath.cross(face12, face13));
 
-            const lastPosDot = VecMath.dot(faceNormal, VecMath.sub(vertexLastState.pos, faceV1));
-            const currPosDot = VecMath.dot(faceNormal, VecMath.sub(vertex.pos, faceV1));
+            const lastPosDot = VecMath.dot(faceNormal, VecMath.sub(vertexLastState.pos, faceV1.pos));
+            const currPosDot = VecMath.dot(faceNormal, VecMath.sub(vertex.pos, faceV1.pos));
 
-            if (lastPosDot * currPosDot < 0) {
-                const candidateCollisionTimeFraction = lastPosDot / (lastPosDot - currPosDot);
+            if (lastPosDot > 0 && currPosDot < 0) {
+                const candidateCollisionTimeFraction = lastPosDot / (lastPosDot - currPosDot) * timestep;
 
-                const collisionPos = VecMath.add(vertexLastState.pos, VecMath.scalarMult(timestep * candidateCollisionTimeFraction, vertex.vel));
+                const collisionPos = VecMath.add(vertexLastState.pos, VecMath.scalarMult(candidateCollisionTimeFraction, vertex.vel));
 
-                if (pointInTriangle(collisionPos.x, collisionPos.y, collisionPos.z, [faceV1, faceV2, faceV3])) {
-                    console.log(vertexLastState.pos, vertex.pos);
-                    console.log([faceV1, faceV2, faceV3]);
-                    console.log(faceNormal);
-                    simulating = false;
+                if (pointInTriangle(collisionPos.x, collisionPos.y, collisionPos.z, [faceV1.pos, faceV2.pos, faceV3.pos])) {
+                    // simulating = false;
+
+                    if (candidateCollisionTimeFraction < earliestCollisionTime) {
+                        earliestCollisionTime = candidateCollisionTimeFraction;
+
+                        collision = {
+                            time: earliestCollisionTime,
+                            type: 'vertex-face',
+                            vertex: vertex,
+                            face: [faceV1, faceV2, faceV3],
+                            normal: faceNormal,
+                        };
+                    }
                 }
             }
         }
     }
+
+    return collision;
 }
 
 function simulate() {
     if (simulating) {
-        const timestep = 0.1;
+        let timeRemaining = 0.05;
+        let collision;
 
-        objectSimulators.forEach(simulator => {
-            simulator.simulate(timestep, objectSimulators);
-        });
+        // console.log('-------------------------');
+        while (timeRemaining > 0) {
+            let timeSimulated = timeRemaining;
 
-        if (objectSimulators.length === 2) {
-            const obj1 = objectSimulators[0];
-            const obj2 = objectSimulators[1];
+            objectSimulators.forEach(simulator => {
+                simulator.simulate(timeRemaining, objectSimulators);
+            });
 
-            checkVertexFaceCollision(timestep, obj2, obj1);
+            if (objectSimulators.length === 2) {
+                const obj1 = objectSimulators[0];
+                const obj2 = objectSimulators[1];
+
+                const collision = checkCollsion(timeSimulated, obj2, obj1);
+
+                if (collision) {
+                    timeSimulated = collision.time;
+                    const vertex = collision.vertex;
+                    const faceVertices  = collision.face;
+                    const normal = collision.normal;
+
+                    vertex.vel = VecMath.scalarMult(-1, vertex.vel);
+
+                    faceVertices.forEach(fv => {
+                        fv.vel = VecMath.scalarMult(-0.4, normal);
+                    })
+                }
+            }
+
+            if (timeSimulated < timeRemaining) {
+                // console.log(timeSimulated);
+                objectSimulators.forEach(simulator => {
+                    simulator.simulate(timeRemaining, objectSimulators);
+                });
+            }
+
+            timeRemaining -= timeSimulated;
         }
     }
 

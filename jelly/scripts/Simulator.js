@@ -10,6 +10,7 @@ module.exports = class Simulator {
         this._accelerations = [];
         this._struts = [];
         this.faces = [];
+        this.edges = [];
     }
 
     saveState() {
@@ -42,6 +43,25 @@ module.exports = class Simulator {
     }
 
     restoreState() {
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.vertices[vi];
+            const savedVertex = this.lastState[vi];
+
+            vertex.pos.x = savedVertex.pos.x;
+            vertex.pos.y = savedVertex.pos.y;
+            vertex.pos.z = savedVertex.pos.z;
+
+            vertex.vel.x = savedVertex.vel.x;
+            vertex.vel.y = savedVertex.vel.y;
+            vertex.vel.z = savedVertex.vel.z;
+
+            vertex.acc.x = savedVertex.acc.x;
+            vertex.acc.y = savedVertex.acc.y;
+            vertex.acc.z = savedVertex.acc.z;
+        }
+    }
+
+    goBackToOrigPos() {
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
             const savedVertex = this.lastState[vi];
@@ -123,7 +143,7 @@ module.exports = class Simulator {
 
         const k2 = [];
 
-        this.restoreState();
+        this.goBackToOrigPos();
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
@@ -144,7 +164,7 @@ module.exports = class Simulator {
 
         const k3 = [];
 
-        this.restoreState();
+        this.goBackToOrigPos();
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
@@ -165,7 +185,7 @@ module.exports = class Simulator {
 
         const k4 = [];
 
-        this.restoreState();
+        this.goBackToOrigPos();
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
@@ -185,8 +205,6 @@ module.exports = class Simulator {
             vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t, vertex.vel));
         }
     }
-
-
 
     simulate(t, objects) {
         if (!this.geometry) {
@@ -271,6 +289,10 @@ module.exports = class Simulator {
             this.geometry.vertices.push(new THREE.Vector3(vertex3.pos.x, vertex3.pos.y, vertex3.pos.z));
 
             this.geometry.faces.push(new THREE.Face3(fi * 3, fi * 3 + 1, fi * 3 + 2));
+
+            this.edges.push([vertexIndex1, vertexIndex2]);
+            this.edges.push([vertexIndex1, vertexIndex3]);
+            this.edges.push([vertexIndex2, vertexIndex3]);
 
             this._struts.push(new Strut(vertex1, vertex2));
             this._struts.push(new Strut(vertex1, vertex3));
