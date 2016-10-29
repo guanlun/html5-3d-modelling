@@ -33,7 +33,7 @@ const mouseVec = new THREE.Vector2();
 
 const objectSimulators = [];
 
-function loadObj(filename, initPos, initVel, callback) {
+function loadObj(filename, springLengthMultiplier, dampingCoeff, initPos, initVel, callback) {
     const simulator = new Simulator();
 
     $.get(filename, objData => {
@@ -80,15 +80,15 @@ function loadObj(filename, initPos, initVel, callback) {
                 simulator.addFace(face);
             }
         }
-        simulator.createGeometry();
+        simulator.createGeometry(springLengthMultiplier, dampingCoeff);
 
-        console.log(simulator.vertices);
+        // console.log(simulator.vertices);
 
         callback(simulator);
     });
 }
 
-loadObj('obj/ball.obj', {x: 0, y: 9, z: -3}, {x: 0, y: 0, z: 0.3}, obj => {
+loadObj('obj/ball.obj', 10, 0.05, {x: 0, y: 8, z: 0}, {x: 0, y: 0, z: 0.3}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -99,7 +99,7 @@ loadObj('obj/ball.obj', {x: 0, y: 9, z: -3}, {x: 0, y: 0, z: 0.3}, obj => {
     scene.add(mesh);
 });
 
-loadObj('obj/body.obj', {x: 0, y: 3, z: 3}, {x: 0, y: 0, z: -0.2}, obj => {
+loadObj('obj/body.obj', 1, 0.002, {x: 0, y: 3, z: 3}, {x: 0, y: 0, z: -0.2}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -313,7 +313,6 @@ function checkEdgeEdgeCollision(timestep, obj1, obj2) {
 
                 if (candidateCollisionTimeFraction < earliestCollisionTime) {
                     earliestCollisionTime = candidateCollisionTimeFraction;
-                    console.log(p1, p2, q1, q2);
 
                     collision = {
                         time: earliestCollisionTime,
