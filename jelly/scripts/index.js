@@ -33,7 +33,7 @@ const mouseVec = new THREE.Vector2();
 
 const objectSimulators = [];
 
-function loadObj(filename, springLengthMultiplier, dampingCoeff, initPos, initVel, callback) {
+function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, initPos, initVel, callback) {
     const simulator = new Simulator();
 
     $.get(filename, objData => {
@@ -80,7 +80,7 @@ function loadObj(filename, springLengthMultiplier, dampingCoeff, initPos, initVe
                 simulator.addFace(face);
             }
         }
-        simulator.createGeometry(springLengthMultiplier, dampingCoeff);
+        simulator.createGeometry(springLengthMultiplier, springCoeff, dampingCoeff);
 
         // console.log(simulator.vertices);
 
@@ -88,7 +88,7 @@ function loadObj(filename, springLengthMultiplier, dampingCoeff, initPos, initVe
     });
 }
 
-loadObj('obj/ball.obj', 10, 0.05, {x: 0, y: 8, z: 0}, {x: 0, y: 0, z: 0.3}, obj => {
+loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 8, z: 0}, {x: 0, y: 0, z: 0.3}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -99,7 +99,7 @@ loadObj('obj/ball.obj', 10, 0.05, {x: 0, y: 8, z: 0}, {x: 0, y: 0, z: 0.3}, obj 
     scene.add(mesh);
 });
 
-loadObj('obj/body.obj', 1, 0.002, {x: 0, y: 3, z: 3}, {x: 0, y: 0, z: -0.2}, obj => {
+loadObj('obj/body.obj', 1, 1, 0.002, {x: 0, y: 3, z: 3}, {x: 0, y: 0, z: -0.2}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({

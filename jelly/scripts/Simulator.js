@@ -268,7 +268,7 @@ module.exports = class Simulator {
         }
     }
 
-    createGeometry(springLengthMultiplier, dampingCoeff) {
+    createGeometry(springLengthMultiplier, springCoeff, dampingCoeff) {
         this.geometry = new THREE.Geometry();
 
         const vertexFaceLookup = {};
@@ -296,9 +296,9 @@ module.exports = class Simulator {
             this.edges.push([vertexIndex1, vertexIndex3]);
             this.edges.push([vertexIndex2, vertexIndex3]);
 
-            this._struts.push(new Strut(vertex1, vertex2, springLengthMultiplier, dampingCoeff));
-            this._struts.push(new Strut(vertex1, vertex3, springLengthMultiplier, dampingCoeff));
-            this._struts.push(new Strut(vertex2, vertex3, springLengthMultiplier, dampingCoeff));
+            this._struts.push(new Strut(vertex1, vertex2, springLengthMultiplier, springCoeff, dampingCoeff));
+            this._struts.push(new Strut(vertex1, vertex3, springLengthMultiplier, springCoeff, dampingCoeff));
+            this._struts.push(new Strut(vertex2, vertex3, springLengthMultiplier, springCoeff, dampingCoeff));
 
             let lookupKey;
             if (vertexIndex1 > vertexIndex2) {

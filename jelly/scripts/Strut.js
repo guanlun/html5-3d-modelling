@@ -1,13 +1,13 @@
 const VecMath = require('./VecMath');
 
 module.exports = class Strut {
-    constructor(v1, v2, springLengthMultiplier, dampingCoeff) {
+    constructor(v1, v2, springLengthMultiplier, springCoeff, dampingCoeff) {
         this.v1 = v1;
         this.v2 = v2;
 
         this.l0 = VecMath.distance(v1.pos, v2.pos) * springLengthMultiplier;
 
-        this.springCoeff = 0.2 / this.l0;
+        this.springCoeff = springCoeff / this.l0;
 
         this.dampingCoeff = dampingCoeff;
     }
