@@ -57,7 +57,7 @@ function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, in
                     x: parseFloat(segs[1]) + initPos.x,
                     y: parseFloat(segs[2]) + initPos.y,
                     z: parseFloat(segs[3]) + initPos.z,
-                }, initVel);
+                }, initVel, segs[4] === 'y');
             } else if (dataType === 'vn') {
                 // simulator.addNormal({
                 //
@@ -82,13 +82,11 @@ function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, in
         }
         simulator.createGeometry(springLengthMultiplier, springCoeff, dampingCoeff);
 
-        // console.log(simulator.vertices);
-
         callback(simulator);
     });
 }
 
-loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 8, z: 0}, {x: 0, y: 0, z: 0.3}, obj => {
+loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 4, z: -2}, {x: 0, y: 0, z: 0}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -99,7 +97,7 @@ loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 8, z: 0}, {x: 0, y: 0, z: 0.3},
     scene.add(mesh);
 });
 
-loadObj('obj/body.obj', 1, 1, 0.002, {x: 0, y: 3, z: 3}, {x: 0, y: 0, z: -0.2}, obj => {
+loadObj('obj/body.obj', 1, 1, 0.005, {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -0.5}, obj => {
     objectSimulators.push(obj);
 
     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -303,13 +301,10 @@ function checkEdgeEdgeCollision(timestep, obj1, obj2) {
             const distDot = VecMath.dot(currDiff, lastDiff);
 
             if (distDot < 0) {
-                // simulating = false;
                 const currDist = VecMath.dim(currDiff);
                 const lastDist = VecMath.dim(lastDiff);
 
                 const candidateCollisionTimeFraction = lastDist / (lastDist + currDist) * timestep;
-
-                // const collisionPos = VecMath.add(p1, VecMath.scalarMult(candidateCollisionTimeFraction, obj1.vertices[edge1[0]].vel), VecMath.scalarMult(s, a));
 
                 if (candidateCollisionTimeFraction < earliestCollisionTime) {
                     earliestCollisionTime = candidateCollisionTimeFraction;
@@ -387,9 +382,7 @@ function simulate() {
         let timeRemaining = 0.05;
         let collision;
 
-        // console.log('-------------------------');
         while (timeRemaining > 0) {
-            // console.log(timeRemaining);
             let timeSimulated = timeRemaining;
 
             objectSimulators.forEach(simulator => {
@@ -415,19 +408,12 @@ function simulate() {
                             fv.vel = VecMath.scalarMult(-0.4, normal);
                         });
                     } else if (collision.type === 'edge-edge') {
-                        // console.log(collision);
                         const normal = collision.normal;
 
                         const p1 = collision.obj1.vertices[collision.edge1[0]];
                         const p2 = collision.obj1.vertices[collision.edge1[1]];
                         const q1 = collision.obj2.vertices[collision.edge2[0]];
                         const q2 = collision.obj2.vertices[collision.edge2[1]];
-
-                        if (!p2 || !p1) {
-                            console.log(collision);
-                            console.log(obj1.vertices.length);
-                            console.log(obj2.vertices.length);
-                        }
 
                         p1.vel = VecMath.scalarMult(-0.1, normal);
                         p2.vel = VecMath.scalarMult(-0.1, normal);

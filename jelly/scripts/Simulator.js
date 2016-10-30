@@ -101,6 +101,9 @@ module.exports = class Simulator {
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
+            if (vertex.isStatic) {
+                continue;
+            }
 
             // if (vertex.pos.y === 0) {
             //
@@ -115,6 +118,11 @@ module.exports = class Simulator {
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const vertex = this.vertices[vi];
+
+            if (vertex.isStatic) {
+                // console.log('haha');
+                continue;
+            }
 
             vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t, vertex.vel));
         }
@@ -216,32 +224,30 @@ module.exports = class Simulator {
         this.euler(t);
         // this.rk4(t);
 
-        // objects.forEach(o => {
-        //     if (o === this) {
-        //         return;
-        //     }
-        //
-        //     this.checkVertexFaceCollision(this, o);
-        // });
-
         this.updateGeometry();
 
         this.geometry.verticesNeedUpdate = true;
     }
 
-    addVertex(vertexPos, vertexVel) {
+    addVertex(vertexPos, vertexVel, isStatic) {
+        const vel = isStatic ? {
+            x: 0,
+            y: 0,
+            z: 0,
+        } : {
+            x: vertexVel.x,
+            y: vertexVel.y,
+            z: vertexVel.z,
+        }
         const vertexData = {
             pos: vertexPos,
-            vel: {
-                x: vertexVel.x,
-                y: vertexVel.y,
-                z: vertexVel.z,
-            },
+            vel: vel,
             acc: {
                 x: 0,
                 y: 0,
                 z: 0,
             },
+            isStatic: isStatic,
         };
         this.vertices.push(vertexData);
     }
@@ -289,8 +295,6 @@ module.exports = class Simulator {
             this.geometry.vertices.push(new THREE.Vector3(vertex3.pos.x, vertex3.pos.y, vertex3.pos.z));
 
             this.geometry.faces.push(new THREE.Face3(fi * 3, fi * 3 + 1, fi * 3 + 2));
-
-            // console.log(vertexIndex1, vertexIndex2, vertexIndex3);
 
             this.edges.push([vertexIndex1, vertexIndex2]);
             this.edges.push([vertexIndex1, vertexIndex3]);
