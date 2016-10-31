@@ -31,7 +31,9 @@ const renderer = new THREE.WebGLRenderer({
 const raycaster = new THREE.Raycaster();
 const mouseVec = new THREE.Vector2();
 
-const objectSimulators = [];
+let objectSimulators = [];
+let method = 'Euler';
+let stepSize = 0.05;
 
 function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, initPos, initVel, callback) {
     const simulator = new Simulator();
@@ -85,28 +87,6 @@ function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, in
         callback(simulator);
     });
 }
-
-loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 4, z: -2}, {x: 0, y: 0, z: 0}, obj => {
-    objectSimulators.push(obj);
-
-    const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
-        color: 'red',
-        wireframe: true,
-    }));
-
-    scene.add(mesh);
-});
-
-loadObj('obj/body.obj', 1, 1, 0.005, {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -0.5}, obj => {
-    objectSimulators.push(obj);
-
-    const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
-        color: 0x6666FF,
-        wireframe: true,
-    }));
-
-    scene.add(mesh);
-});
 
 renderer.setSize(WIDTH, HEIGHT);
 renderer.setClearColor(0xffffff, 1);
@@ -210,7 +190,7 @@ function pointInTriangle(px, py, pz, vertices) {
     return (a > 0) && (b > 0) && (c > 0);
 }
 
-let simulating = true;
+let simulating = false;
 
 function checkCollsion(timestep, obj1, obj2) {
     const collisions = [];
@@ -379,14 +359,14 @@ function checkVertexFaceCollision(timestep, obj1, obj2) {
 
 function simulate() {
     if (simulating) {
-        let timeRemaining = 0.05;
+        let timeRemaining = stepSize;
         let collision;
 
         while (timeRemaining > 0) {
             let timeSimulated = timeRemaining;
 
             objectSimulators.forEach(simulator => {
-                simulator.simulate(timeRemaining, objectSimulators);
+                simulator.simulate(method, timeRemaining, objectSimulators);
             });
 
             if (objectSimulators.length === 2) {
@@ -424,9 +404,8 @@ function simulate() {
             }
 
             if (timeSimulated < timeRemaining) {
-                // console.log(timeSimulated);
                 objectSimulators.forEach(simulator => {
-                    simulator.simulate(timeRemaining, objectSimulators);
+                    simulator.simulate(method, timeRemaining, objectSimulators);
                 });
             }
 
@@ -439,3 +418,105 @@ function simulate() {
     requestAnimationFrame(simulate);
 }
 simulate();
+
+const meshes = [];
+
+const startPauseBtn = $('#start-pause-btn');
+startPauseBtn.click(e => {
+    simulating = !simulating;
+});
+
+const loadPreset1Btn = $('#load-preset-1-btn');
+loadPreset1Btn.click(e => {
+    objectSimulators = [];
+    meshes.forEach(m => {
+        scene.remove(m);
+    });
+
+    loadObj('obj/box4.obj', 1, 0.1, 0.05, {x: 0, y: 4, z: -2}, {x: 0, y: 0, z: 0}, obj => {
+        objectSimulators.push(obj);
+
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+            color: 'red',
+            wireframe: true,
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
+});
+
+const loadPreset2Btn = $('#load-preset-2-btn');
+loadPreset2Btn.click(e => {
+    console.log('ha');
+    objectSimulators = [];
+    meshes.forEach(m => {
+        scene.remove(m);
+    });
+
+    loadObj('obj/box.obj', 1, 0.2, 0.005, {x: 0, y: 0, z: -2}, {x: 0, y: 0, z: 0}, obj => {
+        objectSimulators.push(obj);
+
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+            color: 'red',
+            wireframe: true,
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
+
+    loadObj('obj/box_r.obj', 1, 0.2, 0.005, {x: 0, y: 3, z: 4}, {x: 0, y: 0, z: -0.3}, obj => {
+        objectSimulators.push(obj);
+
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+            color: 0x6666FF,
+            wireframe: true,
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
+});
+
+const loadPreset3Btn = $('#load-preset-3-btn');
+loadPreset3Btn.click(e => {
+    objectSimulators = [];
+    meshes.forEach(m => {
+        scene.remove(m);
+    });
+
+    loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 4, z: -2}, {x: 0, y: 0, z: 0}, obj => {
+        objectSimulators.push(obj);
+
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+            color: 'red',
+            wireframe: true,
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
+
+    loadObj('obj/body.obj', 1, 1, 0.005, {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -0.5}, obj => {
+        objectSimulators.push(obj);
+
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+            color: 0x6666FF,
+            wireframe: true,
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
+});
+
+const stepSizeSlider = $('#step-size-slider');
+stepSizeSlider.change(e => {
+    stepSize = stepSizeSlider.val();
+});
+
+const methodSelect = $('#method-select');
+methodSelect.change(e => {
+    method = methodSelect.val();
+});

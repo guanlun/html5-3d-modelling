@@ -214,15 +214,18 @@ module.exports = class Simulator {
         }
     }
 
-    simulate(t, objects) {
+    simulate(method, t, objects) {
         if (!this.geometry) {
             return;
         }
 
         this.saveState();
 
-        this.euler(t);
-        // this.rk4(t);
+        if (method === 'Euler') {
+            this.euler(t);
+        } else {
+            this.rk4(t);
+        }
 
         this.updateGeometry();
 
