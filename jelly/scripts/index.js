@@ -194,8 +194,8 @@ let simulating = false;
 
 function checkCollsion(timestep, obj1, obj2) {
     const collisions = [];
-    collisions.push(checkVertexFaceCollision(timestep, obj1, obj2));
     collisions.push(checkVertexFaceCollision(timestep, obj2, obj1));
+    collisions.push(checkVertexFaceCollision(timestep, obj1, obj2));
     collisions.push(checkEdgeEdgeCollision(timestep, obj1, obj2));
 
     let earliestCollisionTime = Number.MAX_VALUE;
@@ -395,17 +395,21 @@ function simulate() {
                         const q1 = collision.obj2.vertices[collision.edge2[0]];
                         const q2 = collision.obj2.vertices[collision.edge2[1]];
 
-                        p1.vel = VecMath.scalarMult(-0.1, normal);
-                        p2.vel = VecMath.scalarMult(-0.1, normal);
-                        q1.vel = VecMath.scalarMult(0.1, normal);
-                        q2.vel = VecMath.scalarMult(0.1, normal);
+                        const collisionVelocityMultiplier = 0.1;
+
+
+
+                        p1.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
+                        p2.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
+                        q1.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
+                        q2.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
                     }
                 }
             }
 
             if (timeSimulated < timeRemaining) {
                 objectSimulators.forEach(simulator => {
-                    simulator.simulate(method, timeRemaining, objectSimulators);
+                    simulator.simulate(method, timeRemaining * 0.99, objectSimulators);
                 });
             }
 
@@ -433,7 +437,7 @@ loadPreset1Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/box4.obj', 1, 0.1, 0.05, {x: 0, y: 4, z: -2}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/box4.obj', 1, 0.1, 0.05, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
 
         const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -448,13 +452,12 @@ loadPreset1Btn.click(e => {
 
 const loadPreset2Btn = $('#load-preset-2-btn');
 loadPreset2Btn.click(e => {
-    console.log('ha');
     objectSimulators = [];
     meshes.forEach(m => {
         scene.remove(m);
     });
 
-    loadObj('obj/box.obj', 1, 0.2, 0.005, {x: 0, y: 0, z: -2}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/box.obj', 1, 0.5, 0.005, {x: 0, y: 0, z: -2}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
 
         const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -466,7 +469,7 @@ loadPreset2Btn.click(e => {
         meshes.push(mesh);
     });
 
-    loadObj('obj/box_r.obj', 1, 0.2, 0.005, {x: 0, y: 3, z: 4}, {x: 0, y: 0, z: -0.3}, obj => {
+    loadObj('obj/box_r.obj', 1, 0.5, 0.005, {x: 0, y: 4, z: 3}, {x: 0, y: 0, z: -0.3}, obj => {
         objectSimulators.push(obj);
 
         const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
