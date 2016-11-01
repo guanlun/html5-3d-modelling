@@ -105,11 +105,7 @@ module.exports = class Simulator {
                 continue;
             }
 
-            // if (vertex.pos.y === 0) {
-            //
-            // } else {
-                vertex.vel = VecMath.add(vertex.vel, VecMath.scalarMult(t, vertex.acc));
-            // }
+            vertex.vel = VecMath.add(vertex.vel, VecMath.scalarMult(t, vertex.acc));
         }
     }
 
@@ -120,7 +116,6 @@ module.exports = class Simulator {
             const vertex = this.vertices[vi];
 
             if (vertex.isStatic) {
-                // console.log('haha');
                 continue;
             }
 
@@ -165,8 +160,6 @@ module.exports = class Simulator {
             vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
         }
 
-        // this.restoreVel();
-
         // k3
         this.computeSystemDynamics(t / 2);
 
@@ -185,8 +178,6 @@ module.exports = class Simulator {
 
             vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
         }
-
-        // this.restoreVel();
 
         // k4
         this.computeSystemDynamics(t);
@@ -220,9 +211,6 @@ module.exports = class Simulator {
         }
 
         if (shouldSaveState) {
-            // if (this.vertices && this.lastState) {
-            //     console.log(this.vertices[0].pos, this.lastState[0].pos);
-            // }
             this.saveState();
         }
 
