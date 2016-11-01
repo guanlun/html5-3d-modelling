@@ -1,4 +1,4 @@
-Metal Welding Simulation
+Soft Body Simulation
 ======
 
 How to run:
@@ -10,8 +10,6 @@ Used libraries:
 * jQuery (controls)
 
 Additional features:
-* Implemented 3 particle systems (sparks, smoke and vortices)
-* Added vortex force so that there's a random force applied to the smoke particles
-* Collision detection between particles and custom objects (loaded from .obj files, in this case, the welder)
-* Realistic lighting and texturing
-* User interaction: users selects where the particles are generated.
+* Implemented edge-edge collision.
+* Multiple moving objects interacting with each other
+* Car crash simulation!

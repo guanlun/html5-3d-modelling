@@ -35,7 +35,7 @@ let objectSimulators = [];
 let method = 'Euler';
 let stepSize = 0.05;
 
-function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, initPos, initVel, callback) {
+function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, elasticity, initPos, initVel, callback) {
     const simulator = new Simulator();
 
     $.get(filename, objData => {
@@ -78,7 +78,7 @@ function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, in
                 simulator.addFace(face);
             }
         }
-        simulator.createGeometry(springLengthMultiplier, springCoeff, dampingCoeff);
+        simulator.createGeometry(springLengthMultiplier, springCoeff, dampingCoeff, elasticity);
 
         callback(simulator);
     });
@@ -423,7 +423,7 @@ function simulate() {
                         const q1 = collision.obj2.vertices[collision.edge2[0]];
                         const q2 = collision.obj2.vertices[collision.edge2[1]];
 
-                        const collisionVelocityMultiplier = 0.1;
+                        const collisionVelocityMultiplier = (obj1.elasticity + obj2.elasticity) / 2;
 
                         p1.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
                         p2.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
@@ -463,7 +463,7 @@ loadPreset1Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/box4.obj', 1, 0.1, 0.05, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/box4.obj', 1, 0.1, 0.05, 0.1, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
@@ -484,7 +484,7 @@ loadPreset2Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/box.obj', 1, 0.5, 0.005, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/box.obj', 1, 0.5, 0.005, 0.5, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
@@ -496,7 +496,7 @@ loadPreset2Btn.click(e => {
         meshes.push(mesh);
     });
 
-    loadObj('obj/box_r.obj', 1, 0.5, 0.005, {x: 0, y: 4, z: 4}, {x: 0, y: 0, z: -0.2}, obj => {
+    loadObj('obj/box_r.obj', 1, 0.5, 0.005, 0.5, {x: 0, y: 4, z: 4}, {x: 0, y: 0, z: -0.2}, obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
@@ -516,7 +516,7 @@ loadPreset3Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/ball.obj', 10, 0.1, 0.05, {x: 0, y: 4, z: -2.5}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/ball.obj', 10, 0.1, 0.05, 0.1, {x: 0, y: 4, z: -2.5}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
@@ -528,7 +528,7 @@ loadPreset3Btn.click(e => {
         meshes.push(mesh);
     });
 
-    loadObj('obj/body.obj', 1, 1, 0.005, {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -0.5}, obj => {
+    loadObj('obj/body.obj', 1, 1, 0.005, 0.1, {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -0.5}, obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 

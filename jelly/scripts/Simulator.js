@@ -270,10 +270,12 @@ module.exports = class Simulator {
         }
     }
 
-    createGeometry(springLengthMultiplier, springCoeff, dampingCoeff) {
+    createGeometry(springLengthMultiplier, springCoeff, dampingCoeff, elasticity) {
         this.geometry = new THREE.Geometry();
 
         const vertexFaceLookup = {};
+
+        this.elasticity = elasticity;
 
         for (let fi = 0; fi < this.faces.length; fi++) {
             const face = this.faces[fi];
