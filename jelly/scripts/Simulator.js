@@ -33,11 +33,11 @@ module.exports = class Simulator {
                     y: vertex.vel.y,
                     z: vertex.vel.z,
                 },
-                // acc: {
-                //     x: 0,
-                //     y: 0,
-                //     z: 0,
-                // },
+                acc: {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                },
             });
         }
     }
@@ -214,12 +214,17 @@ module.exports = class Simulator {
         }
     }
 
-    simulate(method, t, objects) {
+    simulate(method, t, objects, shouldSaveState) {
         if (!this.geometry) {
             return;
         }
 
-        this.saveState();
+        if (shouldSaveState) {
+            // if (this.vertices && this.lastState) {
+            //     console.log(this.vertices[0].pos, this.lastState[0].pos);
+            // }
+            this.saveState();
+        }
 
         if (method === 'Euler') {
             this.euler(t);

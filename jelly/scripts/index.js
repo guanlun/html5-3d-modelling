@@ -163,22 +163,38 @@ function initCamera() {
 }
 
 function initLight() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-    directionalLight.position.set(0, 0, 30);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(30, 10, -30);
     scene.add(directionalLight);
 
-    props.pointLight = new THREE.PointLight(0x7777ff, 0, 500);
-    props.pointLight.position.set(0, 0, 0.1);
+    props.pointLight = new THREE.PointLight(0xffffff, 1, 5);
+    props.pointLight.position.set(0, 10, 0);
     scene.add(props.pointLight);
 }
 
 initCamera();
 initLight();
 
-function pointInTriangle(px, py, pz, vertices) {
+function pointInTriangle(p, a, b, c) {
+    // const v0 = VecMath.sub(c, a);
+    // const v1 = VecMath.sub(b, a);
+    // const v2 = VecMath.sub(p, a);
+    //
+    // const dot00 = VecMath.dot(v0, v0);
+    // const dot01 = VecMath.dot(v0, v1);
+    // const dot02 = VecMath.dot(v0, v2);
+    // const dot11 = VecMath.dot(v1, v1);
+    // const dot12 = VecMath.dot(v1, v2);
+    //
+    // const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+    // const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    // const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    //
+    // return (u >= 0) && (v >= 0) && (u + v < 1);
+
     const p1 = vertices[0];
     const p2 = vertices[1];
     const p3 = vertices[2];
@@ -187,6 +203,8 @@ function pointInTriangle(px, py, pz, vertices) {
     const b = ((p3.z - p1.z) * (px - p3.x) + (p1.x - p3.x) * (pz - p3.z)) / ((p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z));
     const c = 1 - a - b;
 
+    console.log(a, b, c);
+
     return (a > 0) && (b > 0) && (c > 0);
 }
 
@@ -194,8 +212,8 @@ let simulating = false;
 
 function checkCollsion(timestep, obj1, obj2) {
     const collisions = [];
-    collisions.push(checkVertexFaceCollision(timestep, obj2, obj1));
     collisions.push(checkVertexFaceCollision(timestep, obj1, obj2));
+    // collisions.push(checkVertexFaceCollision(timestep, obj2, obj1));
     collisions.push(checkEdgeEdgeCollision(timestep, obj1, obj2));
 
     let earliestCollisionTime = Number.MAX_VALUE;
@@ -289,6 +307,8 @@ function checkEdgeEdgeCollision(timestep, obj1, obj2) {
                 if (candidateCollisionTimeFraction < earliestCollisionTime) {
                     earliestCollisionTime = candidateCollisionTimeFraction;
 
+                    // console.log(edge1, edge2);
+
                     collision = {
                         time: earliestCollisionTime,
                         type: 'edge-edge',
@@ -312,6 +332,7 @@ function checkVertexFaceCollision(timestep, obj1, obj2) {
     let collision;
 
     for (let vi = 0; vi < obj1.vertices.length; vi++) {
+
         const vertex = obj1.vertices[vi];
         const vertexLastState = obj1.lastState[vi];
 
@@ -322,22 +343,31 @@ function checkVertexFaceCollision(timestep, obj1, obj2) {
             const faceV2 = obj2.vertices[face.vertices[1]];
             const faceV3 = obj2.vertices[face.vertices[2]];
 
+            const lastFaceV1 = obj2.lastState[face.vertices[0]];
+            const lastFaceV2 = obj2.lastState[face.vertices[1]];
+            const lastFaceV3 = obj2.lastState[face.vertices[2]];
+
             const face12 = VecMath.sub(faceV2.pos, faceV1.pos);
             const face13 = VecMath.sub(faceV3.pos, faceV1.pos);
 
-            const faceNormal = VecMath.normalize(VecMath.cross(face12, face13));
+            const lastFace12 = VecMath.sub(lastFaceV2.pos, lastFaceV1.pos);
+            const lastFace13 = VecMath.sub(lastFaceV3.pos, lastFaceV1.pos);
 
-            const lastPosDot = VecMath.dot(faceNormal, VecMath.sub(vertexLastState.pos, faceV1.pos));
+            const faceNormal = VecMath.normalize(VecMath.cross(face12, face13));
+            const lastFaceNormal = VecMath.normalize(VecMath.cross(lastFace12, lastFace13));
+
             const currPosDot = VecMath.dot(faceNormal, VecMath.sub(vertex.pos, faceV1.pos));
+            const lastPosDot = VecMath.dot(lastFaceNormal, VecMath.sub(vertexLastState.pos, lastFaceV1.pos));
+
+            // if (lastPosDot * currPosDot <= 0) {
 
             if (lastPosDot > 0 && currPosDot < 0) {
                 const candidateCollisionTimeFraction = lastPosDot / (lastPosDot - currPosDot) * timestep;
 
                 const collisionPos = VecMath.add(vertexLastState.pos, VecMath.scalarMult(candidateCollisionTimeFraction, vertex.vel));
 
-                if (pointInTriangle(collisionPos.x, collisionPos.y, collisionPos.z, [faceV1.pos, faceV2.pos, faceV3.pos])) {
-                    // simulating = false;
 
+                if (pointInTriangle(collisionPos, faceV1.pos, faceV2.pos, faceV3.pos)) {
                     if (candidateCollisionTimeFraction < earliestCollisionTime) {
                         earliestCollisionTime = candidateCollisionTimeFraction;
 
@@ -357,16 +387,26 @@ function checkVertexFaceCollision(timestep, obj1, obj2) {
     return collision;
 }
 
+let frame = 0;
+
 function simulate() {
+    frame++;
     if (simulating) {
         let timeRemaining = stepSize;
         let collision;
 
-        while (timeRemaining > 0) {
+        // console.log('-------------------');
+
+        let iter = 0;
+
+        while (timeRemaining > 0 && iter < 10) {
+            iter++;
+
+            // console.log(timeRemaining, iter);
             let timeSimulated = timeRemaining;
 
             objectSimulators.forEach(simulator => {
-                simulator.simulate(method, timeRemaining, objectSimulators);
+                simulator.simulate(method, timeRemaining, objectSimulators, true);
             });
 
             if (objectSimulators.length === 2) {
@@ -376,8 +416,13 @@ function simulate() {
                 const collision = checkCollsion(timeSimulated, obj2, obj1);
 
                 if (collision) {
+                    timeSimulated = collision.time;
+
+                    objectSimulators.forEach(simulator => {
+                        simulator.restoreState();
+                    });
+
                     if (collision.type === 'vertex-face') {
-                        timeSimulated = collision.time;
                         const vertex = collision.vertex;
                         const faceVertices  = collision.face;
                         const normal = collision.normal;
@@ -385,8 +430,9 @@ function simulate() {
                         vertex.vel = VecMath.scalarMult(-1, vertex.vel);
 
                         faceVertices.forEach(fv => {
-                            fv.vel = VecMath.scalarMult(-0.4, normal);
+                            fv.vel = VecMath.scalarMult(-0.1, normal);
                         });
+                        // simulating = false;
                     } else if (collision.type === 'edge-edge') {
                         const normal = collision.normal;
 
@@ -397,19 +443,19 @@ function simulate() {
 
                         const collisionVelocityMultiplier = 0.1;
 
-
-
-                        p1.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
-                        p2.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
-                        q1.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
-                        q2.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
+                        p1.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
+                        p2.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
+                        q1.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
+                        q2.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
                     }
+
+                    // simulating = false;
                 }
             }
 
             if (timeSimulated < timeRemaining) {
                 objectSimulators.forEach(simulator => {
-                    simulator.simulate(method, timeRemaining * 0.99, objectSimulators);
+                    simulator.simulate(method, timeSimulated, objectSimulators);
                 });
             }
 
@@ -457,7 +503,7 @@ loadPreset2Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/box.obj', 1, 0.5, 0.005, {x: 0, y: 0, z: -2}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/box.obj', 1, 0.5, 0.005, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
 
         const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -469,7 +515,7 @@ loadPreset2Btn.click(e => {
         meshes.push(mesh);
     });
 
-    loadObj('obj/box_r.obj', 1, 0.5, 0.005, {x: 0, y: 4, z: 3}, {x: 0, y: 0, z: -0.3}, obj => {
+    loadObj('obj/box_r.obj', 1, 0.5, 0.005, {x: 0, y: 4, z: 1}, {x: 0, y: 0, z: -0.1}, obj => {
         objectSimulators.push(obj);
 
         const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
@@ -489,12 +535,12 @@ loadPreset3Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 4, z: -2}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/ball.obj', 10, 0.2, 0.05, {x: 0, y: 4, z: -2.5}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
+        obj.geometry.computeFaceNormals();
 
-        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
             color: 'red',
-            wireframe: true,
         }));
 
         scene.add(mesh);
@@ -503,16 +549,44 @@ loadPreset3Btn.click(e => {
 
     loadObj('obj/body.obj', 1, 1, 0.005, {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -0.5}, obj => {
         objectSimulators.push(obj);
+        obj.geometry.computeFaceNormals();
 
-        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
             color: 0x6666FF,
-            wireframe: true,
         }));
 
         scene.add(mesh);
         meshes.push(mesh);
     });
+
+    // const sphere = new THREE.Mesh(
+    //     new THREE.SphereGeometry(5, 20, 20),
+    //     new THREE.MeshPhongMaterial({
+    //         color: 'red',
+    //     })
+    // );
+    // scene.add(sphere)
+    //
+    // console.log(sphere);
 });
+
+// const g = new THREE.Geometry();
+//
+// g.vertices.push(new THREE.Vector3(-1, 0, 1));
+// g.vertices.push(new THREE.Vector3(-1, 0, -1));
+// g.vertices.push(new THREE.Vector3(1, 0, 1));
+//
+// g.faces.push(new THREE.Face3(1, 0, 2));
+//
+// g.computeBoundingSphere();
+// g.normalsNeedUpdate = true;
+// g.colorsNeedUpdate = true;
+//
+// scene.add(new THREE.Mesh(
+//     g,
+//     // new THREE.SphereGeometry(1, 10, 10),
+//     new THREE.MeshPhongMaterial({color: 0xFF0000})
+// ));
 
 const stepSizeSlider = $('#step-size-slider');
 stepSizeSlider.change(e => {
