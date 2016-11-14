@@ -264,8 +264,10 @@ module.exports = class Simulator {
     computeCenterOfMass() {
         let minX = Number.MAX_VALUE;
         let minY = Number.MAX_VALUE;
+        let minZ = Number.MAX_VALUE;
         let maxX = -Number.MAX_VALUE;
-        let maxY = -Number.MAX_VALUE;
+        let maxY = -Number.MAX_VALUE
+        let maxZ = -Number.MAX_VALUE;
 
         for (let vi = 0; vi < this.vertices.length; vi++) {
             const p = this.vertices[vi].pos;
@@ -285,21 +287,36 @@ module.exports = class Simulator {
             if (p[1] < minY) {
                 minY = p[1];
             }
+
+            if (p[2] > maxZ) {
+                maxZ = p[2];
+            }
+
+            if (p[2] < minZ) {
+                minZ = p[2];
+            }
         }
 
         minX -= 0.1;
         minY -= 0.1;
+        minZ -= 0.1;
         maxX += 0.1;
         maxY += 0.1;
+        maxZ += 0.1;
 
-        const xStep = (maxX - minX) / 100;
-        const yStep = (maxY - minY) / 100;
+        const xStep = (maxX - minX) / 10;
+        const yStep = (maxY - minY) / 10;
+        const zStep = (maxZ - minZ) / 10;
 
-        const x = 0;
-        const y = 0.5;
+        const pointsInObject = [];
 
-        // for (let x = minX; x <= maxX; x += xStep) {
-        //     for (let y = minY; y <= maxY; y += yStep) {
+        for (let x = minX; x <= maxX; x += xStep) {
+            for (let y = minY; y <= maxY; y += yStep) {
+                // const x = 0;
+                // const y = 0.5;
+
+                const zIntersectionIndices = [];
+
                 for (let fi = 0; fi < this.faces.length; fi++) {
                     const triangleVertices = this.faces[fi].vertices;
                     const v1 = this.vertices[triangleVertices[0]].pos;
@@ -322,13 +339,48 @@ module.exports = class Simulator {
 
                     const c = 1 - a - b;
 
-                    if (a > 0 && a < 1 && b > 0 && b < 1 && c > 0 && c < 1) {
-                        console.log(v1, v2, v3, v12, v13, a, b);
-                        // console.log(a, b, xDiff, yDiff);
+                    if (a >= 0 && a <= 1 && b >= 0 && b <= 1 && c >= 0 && c <= 1) {
+                        const zPos = a * v12[2] + b * v13[2] + v1[2];
+
+                        zIntersectionIndices.push(zPos);
                     }
                 }
-        //     }
-        // }
+
+                zIntersectionIndices.sort();
+
+                let isInside = false;
+
+                let lastZ = minZ;
+
+                let currIntersectIndex = 0;
+
+                for (let z = minZ; z <= maxZ; z += zStep) {
+                    const currIntersectZ = zIntersectionIndices[currIntersectIndex];
+
+                    if (z > currIntersectZ && lastZ <= currIntersectZ) {
+                        currIntersectIndex++;
+                        isInside = !isInside;
+                    }
+
+                    if (isInside) {
+                        pointsInObject.push([x, y, z]);
+                    }
+
+                    lastZ = z;
+                }
+            }
+        }
+
+        let aggr = [0, 0, 0];
+
+        for (let pi = 0; pi < pointsInObject.length; pi++) {
+            const point = pointsInObject[pi];
+
+            aggr = math.add(aggr, point);
+        }
+
+        const centerOfMass = math.divide(aggr, pointsInObject.length);
+        console.log(centerOfMass);
     }
 
     updateGeometry() {

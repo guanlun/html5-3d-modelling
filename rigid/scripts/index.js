@@ -462,7 +462,7 @@ loadPreset1Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/box.obj', 1, 0.1, 0.05, 0.1, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/jelly_tri.obj', 1, 0.1, 0.05, 0.1, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
