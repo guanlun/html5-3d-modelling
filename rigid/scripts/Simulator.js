@@ -308,13 +308,10 @@ module.exports = class Simulator {
         const yStep = (maxY - minY) / 10;
         const zStep = (maxZ - minZ) / 10;
 
-        const pointsInObject = [];
+        this.pointsInObject = [];
 
         for (let x = minX; x <= maxX; x += xStep) {
             for (let y = minY; y <= maxY; y += yStep) {
-                // const x = 0;
-                // const y = 0.5;
-
                 const zIntersectionIndices = [];
 
                 for (let fi = 0; fi < this.faces.length; fi++) {
@@ -363,7 +360,7 @@ module.exports = class Simulator {
                     }
 
                     if (isInside) {
-                        pointsInObject.push([x, y, z]);
+                        this.pointsInObject.push([x, y, z]);
                     }
 
                     lastZ = z;
@@ -373,14 +370,61 @@ module.exports = class Simulator {
 
         let aggr = [0, 0, 0];
 
-        for (let pi = 0; pi < pointsInObject.length; pi++) {
-            const point = pointsInObject[pi];
+        for (let pi = 0; pi < this.pointsInObject.length; pi++) {
+            const point = this.pointsInObject[pi];
 
             aggr = math.add(aggr, point);
         }
 
-        const centerOfMass = math.divide(aggr, pointsInObject.length);
-        console.log(centerOfMass);
+        this.centerOfMass = math.divide(aggr, this.pointsInObject.length);
+    }
+
+    recenter() {
+        const cos = this.centerOfMass;
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const p = this.vertices[vi].pos;
+            p[0] -= cos[0];
+            p[1] -= cos[1];
+            p[2] -= cos[2];
+        }
+
+        for (let pi = 0; pi < this.pointsInObject.length; pi++) {
+            const point = this.pointsInObject[pi];
+
+            point[0] -= cos[0];
+            point[1] -= cos[1];
+            point[2] -= cos[2];
+        }
+    }
+
+    computeMomentOfInertia() {
+        const m = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0],
+        ];
+
+        for (let pi = 0; pi < this.pointsInObject.length; pi++) {
+            const point = this.pointsInObject[pi];
+            const x = point[0];
+            const y = point[1];
+            const z = point[2];
+
+            m[0][0] += y * y + z * z;
+            m[0][1] -= x * y;
+            m[0][2] -= x * z;
+            m[1][0] -= x * y;
+            m[1][1] += x * x + z * z;
+            m[1][2] -= y * z;
+            m[2][0] -= x * z;
+            m[2][1] -= y * z;
+            m[2][2] += x * x + y * y;
+        }
+
+        const aggr = new math.matrix(m);
+
+        this.momentOfIntertia = math.divide(aggr, this.pointsInObject.length);
     }
 
     updateGeometry() {
