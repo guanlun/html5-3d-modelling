@@ -190,6 +190,19 @@ module.exports = class Simulator {
 
         dState.x = math.divide(state.p, mass);
 
+        const inverseI0 = math.inv(this.momentOfIntertia);
+        const inverseI = math.multiply(math.multiply(state.r, inverseI0), math.transpose(state.r));
+        // console.log(inverseI);
+
+        const w = math.multiply(inverseI, state.l)._data;
+        const wMtx = new math.matrix([
+            [0, -w[2], w[1]],
+            [w[2], 0, -w[0]],
+            [-w[1], w[0], 0],
+        ]);
+
+        dState.r = math.multiply(wMtx, state.r);
+
         dState.p = [0, -0.001, 0];
 
         return dState;
@@ -200,6 +213,7 @@ module.exports = class Simulator {
 
         newState.x = math.add(state.x, math.multiply(dState.x, h));
         newState.p = math.add(state.p, math.multiply(dState.p, h));
+        newState.r = math.add(state.r, math.multiply(dState.r, h));
 
         return newState;
     }
