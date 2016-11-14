@@ -261,23 +261,97 @@ module.exports = class Simulator {
         this.vertices.push(vertexData);
     }
 
+    computeCenterOfMass() {
+        let minX = Number.MAX_VALUE;
+        let minY = Number.MAX_VALUE;
+        let maxX = -Number.MAX_VALUE;
+        let maxY = -Number.MAX_VALUE;
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const p = this.vertices[vi].pos;
+
+            if (p[0] > maxX) {
+                maxX = p[0];
+            }
+
+            if (p[0] < minX) {
+                minX = p[0];
+            }
+
+            if (p[1] > maxY) {
+                maxY = p[1];
+            }
+
+            if (p[1] < minY) {
+                minY = p[1];
+            }
+        }
+
+        minX -= 0.1;
+        minY -= 0.1;
+        maxX += 0.1;
+        maxY += 0.1;
+
+        const xStep = (maxX - minX) / 100;
+        const yStep = (maxY - minY) / 100;
+
+        const x = 0;
+        const y = 0.5;
+
+        // for (let x = minX; x <= maxX; x += xStep) {
+        //     for (let y = minY; y <= maxY; y += yStep) {
+                for (let fi = 0; fi < this.faces.length; fi++) {
+                    const triangleVertices = this.faces[fi].vertices;
+                    const v1 = this.vertices[triangleVertices[0]].pos;
+                    const v2 = this.vertices[triangleVertices[1]].pos;
+                    const v3 = this.vertices[triangleVertices[2]].pos;
+
+                    const v12 = math.subtract(v2, v1);
+                    const v13 = math.subtract(v3, v1);
+
+                    const xDiff = x - v1[0];
+                    const yDiff = y - v1[1];
+
+                    const m = v12[0];
+                    const n = v12[1];
+                    const p = v13[0];
+                    const q = v13[1];
+
+                    const b = (m * yDiff - xDiff * n) / (m * q - n * p);
+                    const a = (xDiff - b * p) / m;
+
+                    const c = 1 - a - b;
+
+                    if (a > 0 && a < 1 && b > 0 && b < 1 && c > 0 && c < 1) {
+                        console.log(v1, v2, v3, v12, v13, a, b);
+                        // console.log(a, b, xDiff, yDiff);
+                    }
+                }
+        //     }
+        // }
+    }
+
     updateGeometry() {
         const globalPos = this.state.x;
+        const globalRotation = this.state.r;
 
         for (let fi = 0; fi < this.faces.length; fi++) {
             const face =  this.faces[fi];
 
             let vertexIndex = face.vertices[0];
             let vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 3].set(vertex.pos.x + globalPos[0], vertex.pos.y + globalPos[1], vertex.pos.z + globalPos[2]);
+            let worldPos = math.add(globalPos, math.multiply(globalRotation, vertex.pos));
+            this.geometry.vertices[fi * 3].set(worldPos._data[0], worldPos._data[1], worldPos._data[2]);
 
             vertexIndex = face.vertices[1];
             vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 3 + 1].set(vertex.pos.x + globalPos[0], vertex.pos.y + globalPos[1], vertex.pos.z + globalPos[2]);
+            worldPos = math.add(globalPos, math.multiply(globalRotation, vertex.pos));
+            this.geometry.vertices[fi * 3 + 1].set(worldPos._data[0], worldPos._data[1], worldPos._data[2]);
 
             vertexIndex = face.vertices[2];
             vertex = this.vertices[vertexIndex];
-            this.geometry.vertices[fi * 3 + 2].set(vertex.pos.x + globalPos[0], vertex.pos.y + globalPos[1], vertex.pos.z + globalPos[2]);
+            worldPos = math.add(globalPos, math.multiply(globalRotation, vertex.pos));
+            this.geometry.vertices[fi * 3 + 2].set(worldPos._data[0], worldPos._data[1], worldPos._data[2]);
         }
     }
 
@@ -293,15 +367,15 @@ module.exports = class Simulator {
 
             const vertexIndex1 = face.vertices[0];
             const vertex1 = this.vertices[vertexIndex1];
-            this.geometry.vertices.push(new THREE.Vector3(vertex1.pos.x, vertex1.pos.y, vertex1.pos.z));
+            this.geometry.vertices.push(new THREE.Vector3(vertex1.pos[0], vertex1.pos[1], vertex1.pos[2]));
 
             const vertexIndex2 = face.vertices[1];
             const vertex2 = this.vertices[vertexIndex2];
-            this.geometry.vertices.push(new THREE.Vector3(vertex2.pos.x, vertex2.pos.y, vertex2.pos.z));
+            this.geometry.vertices.push(new THREE.Vector3(vertex2.pos[0], vertex2.pos[1], vertex2.pos[2]));
 
             const vertexIndex3 = face.vertices[2];
             const vertex3 = this.vertices[vertexIndex3];
-            this.geometry.vertices.push(new THREE.Vector3(vertex3.pos.x, vertex3.pos.y, vertex3.pos.z));
+            this.geometry.vertices.push(new THREE.Vector3(vertex3.pos[0], vertex3.pos[1], vertex3.pos[2]));
 
             this.geometry.faces.push(new THREE.Face3(fi * 3, fi * 3 + 1, fi * 3 + 2));
 

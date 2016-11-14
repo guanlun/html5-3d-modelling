@@ -53,11 +53,11 @@ function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, el
             const dataType = segs[0];
 
             if (dataType === 'v') {
-                simulator.addVertex({
-                    x: parseFloat(segs[1]) + initPos.x,
-                    y: parseFloat(segs[2]) + initPos.y,
-                    z: parseFloat(segs[3]) + initPos.z,
-                }, initVel, segs[4] === 'y');
+                simulator.addVertex([
+                    parseFloat(segs[1]) + initPos.x,
+                    parseFloat(segs[2]) + initPos.y,
+                    parseFloat(segs[3]) + initPos.z,
+                ], initVel, segs[4] === 'y');
             } else if (dataType === 'f') {
                 const face = {
                     vertices: [],
@@ -76,6 +76,7 @@ function loadObj(filename, springLengthMultiplier, springCoeff, dampingCoeff, el
                 simulator.addFace(face);
             }
         }
+        simulator.computeCenterOfMass();
         simulator.createGeometry(springLengthMultiplier, springCoeff, dampingCoeff, elasticity);
 
         callback(simulator);
@@ -461,7 +462,7 @@ loadPreset1Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/box4.obj', 1, 0.1, 0.05, 0.1, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
+    loadObj('obj/box.obj', 1, 0.1, 0.05, 0.1, {x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
