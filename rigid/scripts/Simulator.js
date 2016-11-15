@@ -192,7 +192,6 @@ module.exports = class Simulator {
 
         const inverseI0 = math.inv(this.momentOfIntertia);
         const inverseI = math.multiply(math.multiply(state.r, inverseI0), math.transpose(state.r));
-        // console.log(inverseI);
 
         const w = math.multiply(inverseI, state.l)._data;
         const wMtx = new math.matrix([
@@ -203,7 +202,7 @@ module.exports = class Simulator {
 
         dState.r = math.multiply(wMtx, state.r);
 
-        dState.p = [0, -0.001, 0];
+        dState.p = [0, -0.0005, 0];
 
         return dState;
     }
@@ -465,27 +464,40 @@ module.exports = class Simulator {
         }
     }
 
-    createGeometry(springLengthMultiplier, springCoeff, dampingCoeff, elasticity) {
+    createGeometry(initPos) {
+        this.state.x = math.add(this.state.x, initPos);
+        const globalPos = this.state.x;
+
         this.geometry = new THREE.Geometry();
 
         const vertexFaceLookup = {};
-
-        this.elasticity = elasticity;
 
         for (let fi = 0; fi < this.faces.length; fi++) {
             const face = this.faces[fi];
 
             const vertexIndex1 = face.vertices[0];
             const vertex1 = this.vertices[vertexIndex1];
-            this.geometry.vertices.push(new THREE.Vector3(vertex1.pos[0], vertex1.pos[1], vertex1.pos[2]));
+            this.geometry.vertices.push(new THREE.Vector3(
+                vertex1.pos[0] + globalPos[0],
+                vertex1.pos[1] + globalPos[1],
+                vertex1.pos[2] + globalPos[2]
+            ));
 
             const vertexIndex2 = face.vertices[1];
             const vertex2 = this.vertices[vertexIndex2];
-            this.geometry.vertices.push(new THREE.Vector3(vertex2.pos[0], vertex2.pos[1], vertex2.pos[2]));
+            this.geometry.vertices.push(new THREE.Vector3(
+                vertex2.pos[0] + globalPos[0],
+                vertex2.pos[1] + globalPos[1],
+                vertex2.pos[2] + globalPos[2]
+            ));
 
             const vertexIndex3 = face.vertices[2];
             const vertex3 = this.vertices[vertexIndex3];
-            this.geometry.vertices.push(new THREE.Vector3(vertex3.pos[0], vertex3.pos[1], vertex3.pos[2]));
+            this.geometry.vertices.push(new THREE.Vector3(
+                vertex3.pos[0] + globalPos[0],
+                vertex3.pos[1] + globalPos[1],
+                vertex3.pos[2] + globalPos[2]
+            ));
 
             this.geometry.faces.push(new THREE.Face3(fi * 3, fi * 3 + 1, fi * 3 + 2));
 
