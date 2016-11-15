@@ -479,6 +479,18 @@ loadPreset1Btn.click(e => {
     });
 });
 
+const planeGeometry = new THREE.PlaneGeometry(10, 10);
+
+const plane = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({
+    color: 'blue',
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide,
+}));
+plane.rotation.x = -Math.PI / 2;
+
+scene.add(plane);
+
 const loadPreset2Btn = $('#load-preset-2-btn');
 loadPreset2Btn.click(e => {
 });

@@ -222,20 +222,30 @@ module.exports = class Simulator {
             return;
         }
 
-        const dState = this.computeDerivative(this.state, 1);
+        // TODO:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+        t = 1;
 
-        const newState = this.applyStateDerivative(this.state, dState, 1);
+        let dState = this.computeDerivative(this.state, 1);
+
+        let newState = this.applyStateDerivative(this.state, dState, 1);
+
+        const collision = this.checkCollsion(this.state, newState);
+
+        if (collision) {
+            const timeSimulated = collision.timeFraction * t;
+
+            newState = this.applyStateDerivative(this.state, dState, timeSimulated);
+
+            this.state.p = [0, 0.03, 0];
+
+            const timeRemaining = t - timeSimulated;
+
+            dState = this.computeDerivative(this.state, timeRemaining);
+            newState = this.applyStateDerivative(this.state, dState, timeRemaining);
+        }
 
         this.state = newState;
 
-        // console.log(dState);
-
-        // this.state.x[1] += 0.001;
-
-        // if (shouldSaveState) {
-        //     this.saveState();
-        // }
-        //
         // if (method === 'Euler') {
         //     this.euler(t);
         // } else {
@@ -245,6 +255,30 @@ module.exports = class Simulator {
         this.updateGeometry();
 
         this.geometry.verticesNeedUpdate = true;
+    }
+
+    checkCollsion(lastState, newState) {
+        const lastObjPos = lastState.x;
+        const lastObjRotation = lastState.r;
+
+        const newObjPos = newState.x;
+        const newObjRotation = newState.r;
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const p = this.vertices[vi].pos;
+
+            const lastWorldPos = math.add(lastObjPos, math.multiply(lastObjRotation, p))._data;
+            const newWorldPos = math.add(newObjPos, math.multiply(newObjRotation, p))._data;
+
+            const lastY = lastWorldPos[1];
+            const newY = newWorldPos[1];
+
+            if (lastY > 0 && newY <= 0) {
+                return {
+                    timeFraction: lastY / (lastY - newY),
+                };
+            }
+        }
     }
 
     addFace(face) {
