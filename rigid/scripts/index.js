@@ -1,6 +1,4 @@
-const Constants = require('./Constants');
 const Simulator = require('./Simulator');
-const VecMath = require('./VecMath');
 const scene = new THREE.Scene();
 
 const WIDTH = 1000;
@@ -10,7 +8,7 @@ const props = {
     camera: null,
     cameraPos: {
         x: 10,
-        y: 0,
+        y: 2,
         z: 0,
     },
 
@@ -405,7 +403,7 @@ function simulate() {
 
         let iter = 0;
 
-        while (timeRemaining > 0.01 * stepSize && iter < 10) {
+        while (timeRemaining > (0.01 * stepSize) && iter < 10) {
             iter++;
 
             let timeSimulated = timeRemaining;

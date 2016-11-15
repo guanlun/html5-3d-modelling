@@ -1,5 +1,3 @@
-const Constants = require('./Constants');
-const VecMath = require('./VecMath');
 const ObjectState = require('./ObjectState');
 
 module.exports = class Simulator {
@@ -7,11 +5,11 @@ module.exports = class Simulator {
         this.state = new ObjectState();
 
         this.vertices = [];
-        this._velocities = [];
-        this._accelerations = [];
-        this._struts = [];
         this.faces = [];
         this.edges = [];
+
+        this.mass = 1;
+        this.c_r = 0.8;
     }
 
     saveState() {
@@ -188,6 +186,7 @@ module.exports = class Simulator {
         dState.r = math.multiply(wMtx, state.r);
 
         dState.p = [0, -0.01, 0];
+        dState.l = [0, 0, 0];
 
         return dState;
     }
@@ -198,6 +197,7 @@ module.exports = class Simulator {
         newState.x = math.add(state.x, math.multiply(dState.x, h));
         newState.p = math.add(state.p, math.multiply(dState.p, h));
         newState.r = math.add(state.r, math.multiply(dState.r, h));
+        newState.l = math.add(state.l, math.multiply(dState.l, h));
 
         return newState;
     }
@@ -261,13 +261,40 @@ module.exports = class Simulator {
             if (lastY > 0 && newY <= 0) {
                 return {
                     time: lastY / (lastY - newY) * timestep,
+                    normal: [0, 1, 0],
+                    r_a: p,
                 };
             }
         }
     }
 
     respondToCollision(collision) {
-        this.state.p = [0, -0.8 * this.state.p[1], 0];
+        const {
+            r_a,
+            normal,
+        } = collision;
+
+        const v_before = math.divide(this.state.p, this.mass);
+        const v_normal_before = math.dot(v_before, normal);
+
+        // TODO: optimize
+        const inverseI0 = math.inv(this.momentOfIntertia);
+        const inverseI = math.multiply(math.multiply(this.state.r, inverseI0), math.transpose(this.state.r));
+
+        const n = -(1 + this.c_r) * v_normal_before;
+        // const d = 1 / this.mass + math.dot(normal, math.multiply(inverseI, math.cross(math.cross(r_a, normal), r_a)));
+        const d = 1 / this.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
+        const j = n / d;
+
+        const deltaP = math.multiply(1 * j, normal);
+        const deltaL = math.multiply(1, math.cross(r_a, deltaP));
+
+        console.log(normal, this.state.p);
+
+        this.state.p = math.add(this.state.p, deltaP);
+        this.state.l = math.add(this.state.l, deltaL);
+        console.log(this.state.p);
+        console.log('--------------------');
     }
 
     addFace(face) {
@@ -460,7 +487,7 @@ module.exports = class Simulator {
 
         const aggr = new math.matrix(m);
 
-        this.momentOfIntertia = math.divide(aggr, this.pointsInObject.length);
+        this.momentOfIntertia = math.divide(aggr, this.pointsInObject.length / 10);
     }
 
     updateGeometry() {
