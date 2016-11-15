@@ -196,26 +196,46 @@ function pointInTriangle(p, a, b, c) {
 
 let simulating = false;
 
-function checkCollsion(timestep, obj1, obj2) {
-    const collisions = [];
-    collisions.push(checkVertexFaceCollision(timestep, obj1, obj2));
-    collisions.push(checkVertexFaceCollision(timestep, obj2, obj1));
-    collisions.push(checkEdgeEdgeCollision(timestep, obj1, obj2));
-
+function checkCollsion(timestep, objects) {
     let earliestCollisionTime = Number.MAX_VALUE;
     let earliestCollision;
 
-    for (let ci = 0; ci < collisions.length; ci++) {
-        const collision = collisions[ci];
+    for (let oi = 0; oi < objects.length; oi++) {
+        const obj = objects[oi];
 
-        if (collision && collision.time < earliestCollisionTime) {
-            earliestCollisionTime = collision.time;
+        const basePlaneCollision = obj.checkBasePlaneCollision(timestep);
 
-            earliestCollision = collision;
+        if (basePlaneCollision) {
+            if (basePlaneCollision && basePlaneCollision.time < earliestCollisionTime) {
+                earliestCollisionTime = basePlaneCollision.time;
+
+                earliestCollision = basePlaneCollision;
+            }
         }
     }
 
     return earliestCollision;
+
+
+    // const collisions = [];
+    // collisions.push(checkVertexFaceCollision(timestep, obj1, obj2));
+    // collisions.push(checkVertexFaceCollision(timestep, obj2, obj1));
+    // collisions.push(checkEdgeEdgeCollision(timestep, obj1, obj2));
+    //
+    // let earliestCollisionTime = Number.MAX_VALUE;
+    // let earliestCollision;
+    //
+    // for (let ci = 0; ci < collisions.length; ci++) {
+    //     const collision = collisions[ci];
+    //
+    //     if (collision && collision.time < earliestCollisionTime) {
+    //         earliestCollisionTime = collision.time;
+    //
+    //         earliestCollision = collision;
+    //     }
+    // }
+    //
+    // return earliestCollision;
 }
 
 function getEdgeRelativeState(p1, p2, q1, q2) {
@@ -385,61 +405,34 @@ function simulate() {
 
         let iter = 0;
 
-        while (timeRemaining > 0 && iter < 10) {
+        while (timeRemaining > 0.01 * stepSize && iter < 10) {
             iter++;
 
             let timeSimulated = timeRemaining;
 
             objectSimulators.forEach(simulator => {
-                simulator.simulate(method, timeRemaining, objectSimulators, true);
+                simulator.simulate(method, timeRemaining);
             });
 
-            if (objectSimulators.length === 2) {
-                const obj1 = objectSimulators[0];
-                const obj2 = objectSimulators[1];
+            const collision = checkCollsion(timeSimulated, objectSimulators);
 
-                const collision = checkCollsion(timeSimulated, obj2, obj1);
+            if (collision) {
+                timeSimulated = collision.time;
 
-                if (collision) {
-                    timeSimulated = collision.time;
-
-                    objectSimulators.forEach(simulator => {
-                        simulator.restoreState();
-                    });
-
-                    if (collision.type === 'vertex-face') {
-                        const vertex = collision.vertex;
-                        const faceVertices  = collision.face;
-                        const normal = collision.normal;
-
-                        vertex.vel = VecMath.scalarMult(-1, vertex.vel);
-
-                        faceVertices.forEach(fv => {
-                            fv.vel = VecMath.scalarMult(-0.1, normal);
-                        });
-                    } else if (collision.type === 'edge-edge') {
-                        const normal = collision.normal;
-
-                        const p1 = collision.obj1.vertices[collision.edge1[0]];
-                        const p2 = collision.obj1.vertices[collision.edge1[1]];
-                        const q1 = collision.obj2.vertices[collision.edge2[0]];
-                        const q2 = collision.obj2.vertices[collision.edge2[1]];
-
-                        const collisionVelocityMultiplier = (obj1.elasticity + obj2.elasticity) / 2;
-
-                        p1.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
-                        p2.vel = VecMath.scalarMult(collisionVelocityMultiplier, normal);
-                        q1.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
-                        q2.vel = VecMath.scalarMult(-collisionVelocityMultiplier, normal);
-                    }
-                }
-            }
-
-            if (timeSimulated < timeRemaining) {
                 objectSimulators.forEach(simulator => {
+                    simulator.restoreState();
+
                     simulator.simulate(method, timeSimulated, objectSimulators);
+
+                    simulator.respondToCollision(collision);
                 });
             }
+
+            // if (timeSimulated < timeRemaining) {
+            //     objectSimulators.forEach(simulator => {
+            //         simulator.simulate(method, timeRemaining, objectSimulators);
+            //     });
+            // }
 
             timeRemaining -= timeSimulated;
         }

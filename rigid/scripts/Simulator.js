@@ -44,22 +44,7 @@ module.exports = class Simulator {
     }
 
     restoreState() {
-        for (let vi = 0; vi < this.vertices.length; vi++) {
-            const vertex = this.vertices[vi];
-            const savedVertex = this.lastState[vi];
-
-            vertex.pos.x = savedVertex.pos.x;
-            vertex.pos.y = savedVertex.pos.y;
-            vertex.pos.z = savedVertex.pos.z;
-
-            vertex.vel.x = savedVertex.vel.x;
-            vertex.vel.y = savedVertex.vel.y;
-            vertex.vel.z = savedVertex.vel.z;
-
-            vertex.acc.x = savedVertex.acc.x;
-            vertex.acc.y = savedVertex.acc.y;
-            vertex.acc.z = savedVertex.acc.z;
-        }
+        this.state = this.lastState;
     }
 
     goBackToOrigPos() {
@@ -202,7 +187,7 @@ module.exports = class Simulator {
 
         dState.r = math.multiply(wMtx, state.r);
 
-        dState.p = [0, -0.0005, 0];
+        dState.p = [0, -0.01, 0];
 
         return dState;
     }
@@ -217,34 +202,33 @@ module.exports = class Simulator {
         return newState;
     }
 
-    simulate(method, t, objects, shouldSaveState) {
+    simulate(method, t) {
         if (!this.geometry) {
             return;
         }
 
-        // TODO:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-        t = 1;
+        this.lastState = this.state;
 
-        let dState = this.computeDerivative(this.state, 1);
+        let dState = this.computeDerivative(this.state, t);
 
-        let newState = this.applyStateDerivative(this.state, dState, 1);
+        this.state = this.applyStateDerivative(this.state, dState, t);
 
-        const collision = this.checkCollsion(this.state, newState);
+        // const collision = this.checkCollsion(this.state, newState);
+        //
+        // if (collision) {
+        //     const timeSimulated = collision.timeFraction * t;
+        //
+        //     newState = this.applyStateDerivative(this.state, dState, timeSimulated);
+        //
+        //     this.state.p = [0, -0.8 * this.state.p[1], 0];
+        //
+        //     const timeRemaining = t - timeSimulated;
+        //
+        //     dState = this.computeDerivative(this.state, timeRemaining);
+        //     newState = this.applyStateDerivative(this.state, dState, timeRemaining);
+        // }
 
-        if (collision) {
-            const timeSimulated = collision.timeFraction * t;
-
-            newState = this.applyStateDerivative(this.state, dState, timeSimulated);
-
-            this.state.p = [0, 0.03, 0];
-
-            const timeRemaining = t - timeSimulated;
-
-            dState = this.computeDerivative(this.state, timeRemaining);
-            newState = this.applyStateDerivative(this.state, dState, timeRemaining);
-        }
-
-        this.state = newState;
+        // this.state = newState;
 
         // if (method === 'Euler') {
         //     this.euler(t);
@@ -253,11 +237,12 @@ module.exports = class Simulator {
         // }
 
         this.updateGeometry();
-
-        this.geometry.verticesNeedUpdate = true;
     }
 
-    checkCollsion(lastState, newState) {
+    checkBasePlaneCollision(timestep) {
+        const lastState = this.lastState;
+        const newState = this.state;
+
         const lastObjPos = lastState.x;
         const lastObjRotation = lastState.r;
 
@@ -275,10 +260,14 @@ module.exports = class Simulator {
 
             if (lastY > 0 && newY <= 0) {
                 return {
-                    timeFraction: lastY / (lastY - newY),
+                    time: lastY / (lastY - newY) * timestep,
                 };
             }
         }
+    }
+
+    respondToCollision(collision) {
+        this.state.p = [0, -0.8 * this.state.p[1], 0];
     }
 
     addFace(face) {
@@ -496,6 +485,8 @@ module.exports = class Simulator {
             worldPos = math.add(globalPos, math.multiply(globalRotation, vertex.pos));
             this.geometry.vertices[fi * 3 + 2].set(worldPos._data[0], worldPos._data[1], worldPos._data[2]);
         }
+
+        this.geometry.verticesNeedUpdate = true;
     }
 
     createGeometry(initPos) {
