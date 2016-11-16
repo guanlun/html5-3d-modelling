@@ -1,5 +1,23 @@
 const ObjectState = require('./ObjectState');
 
+function pointInTriangle(p, a, b, c) {
+    const v0 = math.subtract(c, a);
+    const v1 = math.subtract(b, a);
+    const v2 = math.subtract(p, a);
+
+    const dot00 = math.dot(v0, v0);
+    const dot01 = math.dot(v0, v1);
+    const dot02 = math.dot(v0, v2);
+    const dot11 = math.dot(v1, v1);
+    const dot12 = math.dot(v1, v2);
+
+    const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+    const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+    return (u >= 0) && (v >= 0) && (u + v < 1);
+}
+
 module.exports = class Simulator {
     constructor() {
         this.state = new ObjectState();
@@ -185,7 +203,7 @@ module.exports = class Simulator {
 
         dState.r = math.multiply(wMtx, state.r);
 
-        dState.p = [0, -0.01, 0];
+        dState.p = [0, -1, 0];
         dState.l = [0, 0, 0];
 
         return dState;
@@ -260,6 +278,8 @@ module.exports = class Simulator {
 
             if (lastY > 0 && newY <= 0) {
                 return {
+                    type: 'static-plane',
+                    obj: this,
                     time: lastY / (lastY - newY) * timestep,
                     normal: [0, 1, 0],
                     r_a: p,
@@ -268,58 +288,157 @@ module.exports = class Simulator {
         }
     }
 
+    checkVertexFaceCollision(timestep, obj) {
+        let earliestCollisionTime = timestep;
+        let collision;
+
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const p = this.vertices[vi].pos;
+
+            const lastWorldPos = math.add(this.lastState.x, math.multiply(this.lastState.r, p))._data;
+            const newWorldPos = math.add(this.state.x, math.multiply(this.state.r, p))._data;
+
+            for (let fi = 0; fi < obj.faces.length; fi++) {
+                const face = obj.faces[fi];
+
+                const faceV1 = obj.vertices[face.vertices[0]].pos;
+                const faceV2 = obj.vertices[face.vertices[1]].pos;
+                const faceV3 = obj.vertices[face.vertices[2]].pos;
+
+                // Face vertex positions
+                const lastV1WorldPos = math.add(obj.lastState.x, math.multiply(obj.lastState.r, faceV1))._data;
+                const newV1WorldPos = math.add(obj.state.x, math.multiply(obj.state.r, faceV1))._data;
+
+                const lastV2WorldPos = math.add(obj.lastState.x, math.multiply(obj.lastState.r, faceV2))._data;
+                const newV2WorldPos = math.add(obj.state.x, math.multiply(obj.state.r, faceV2))._data;
+
+                const lastV3WorldPos = math.add(obj.lastState.x, math.multiply(obj.lastState.r, faceV3))._data;
+                const newV3WorldPos = math.add(obj.state.x, math.multiply(obj.state.r, faceV3))._data;
+
+                // Edge vectors
+                const lastFace12 = math.subtract(lastV2WorldPos, lastV1WorldPos);
+                const lastFace13 = math.subtract(lastV3WorldPos, lastV1WorldPos);
+
+                const newFace12 = math.subtract(newV2WorldPos, newV1WorldPos);
+                const newFace13 = math.subtract(newV3WorldPos, newV1WorldPos);
+
+                const lastFaceNormal = math.normalize(math.cross(lastFace12, lastFace13));
+                const newFaceNormal = math.normalize(math.cross(newFace12, newFace13));
+
+                const lastPosDot = math.dot(lastFaceNormal, math.subtract(lastWorldPos, lastV1WorldPos));
+                const newPosDot = math.dot(newFaceNormal, math.subtract(newWorldPos, newV1WorldPos));
+
+                if (lastPosDot > 0 && newPosDot <= 0) {
+                    const candidateCollisionTimeFraction = lastPosDot / (lastPosDot - newPosDot) * timestep;
+
+                    // const collisionPos = math.add(lastWorldPos, math.multiply(candidateCollisionTimeFraction, vertex.vel));
+
+                    // TODO:
+                    const collisionPos = lastWorldPos;
+
+                    if (pointInTriangle(collisionPos, lastV1WorldPos, lastV2WorldPos, lastV3WorldPos)) {
+                        if (candidateCollisionTimeFraction < earliestCollisionTime) {
+                            earliestCollisionTime = candidateCollisionTimeFraction;
+
+                            collision = {
+                                time: earliestCollisionTime,
+                                type: 'vertex-face',
+                                // vertex: vertex,
+                                // face: [faceV1, faceV2, faceV3],
+                                normal: lastFaceNormal,
+                                obj1: this,
+                                obj2: obj,
+                                r_a: math.subtract(collisionPos, this.state.x),
+                                r_b: math.subtract(collisionPos, obj.state.x),
+                            };
+                        }
+                    }
+                }
+            }
+        }
+
+        return collision;
+    }
+
     respondToCollision(collision) {
-        const {
-            r_a,
-            normal,
-        } = collision;
+        if (collision.type === 'static-plane') {
+            if (collision.obj == this) {
+                const {
+                    r_a,
+                    normal,
+                } = collision;
 
-        const v_before = math.divide(this.state.p, this.mass);
-        const v_normal_before = math.dot(v_before, normal);
+                const v_before = math.divide(this.state.p, this.mass);
+                const v_normal_before = math.dot(v_before, normal);
 
-        // TODO: optimize
-        const inverseI0 = math.inv(this.momentOfIntertia);
-        const inverseI = math.multiply(math.multiply(this.state.r, inverseI0), math.transpose(this.state.r));
+                // TODO: optimize
+                const inverseI0 = math.inv(this.momentOfIntertia);
+                const inverseI = math.multiply(math.multiply(this.state.r, inverseI0), math.transpose(this.state.r));
 
-        const n = -(1 + this.c_r) * v_normal_before;
-        // const d = 1 / this.mass + math.dot(normal, math.multiply(inverseI, math.cross(math.cross(r_a, normal), r_a)));
-        const d = 1 / this.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
-        const j = n / d;
+                const n = -(1 + this.c_r) * v_normal_before;
+                const d = 1 / this.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
+                const j = n / d;
 
-        const deltaP = math.multiply(1 * j, normal);
-        const deltaL = math.multiply(1, math.cross(r_a, deltaP));
+                const deltaP = math.multiply(1 * j, normal);
+                const deltaL = math.multiply(1, math.cross(r_a, deltaP));
 
-        console.log(normal, this.state.p);
+                this.state.p = math.add(this.state.p, deltaP);
+                this.state.l = math.add(this.state.l, deltaL);
+                // console.log(this.state.l);
+                // console.log('--------------------');
+            }
+        } else {
+            if (collision.obj1 == this || collision.obj2 == this) {
+                const {
+                    obj1,
+                    obj2,
+                    r_a,
+                    r_b,
+                    normal,
+                } = collision;
 
-        this.state.p = math.add(this.state.p, deltaP);
-        this.state.l = math.add(this.state.l, deltaL);
-        console.log(this.state.p);
-        console.log('--------------------');
+                const v_before = math.divide(math.subtract(obj1.state.p, obj2.state.p), this.mass);
+                const v_normal_before = math.dot(v_before, normal);
+
+                const inverseIA0 = math.inv(obj1.momentOfIntertia);
+                const inverseIA = math.multiply(math.multiply(obj1.state.r, inverseIA0), math.transpose(obj1.state.r));
+
+                const inverseIB0 = math.inv(obj2.momentOfIntertia);
+                const inverseIB = math.multiply(math.multiply(obj2.state.r, inverseIB0), math.transpose(obj2.state.r));
+
+                const n = -(1 + this.c_r) * v_normal_before;
+                const d = 1 / obj1.mass + 1 / obj2.mass +
+                        math.dot(normal,
+                            math.add(
+                                math.cross(math.multiply(inverseIA, math.cross(r_a, normal)), r_a),
+                                math.cross(math.multiply(inverseIB, math.cross(r_b, normal)), r_b)
+                            )
+                        );
+
+                const j = n / d;
+
+                const deltaP = math.multiply(1 * j, normal);
+                const deltaL = math.multiply(1, math.cross(r_a, deltaP));
+
+                obj1.state.p = math.add(obj1.state.p, math.multiply(1, deltaP));
+                obj1.state.l = math.add(obj1.state.l, math.multiply(1, deltaL));
+
+                obj2.state.p = math.add(obj2.state.p, math.multiply(-1, deltaP));
+                obj2.state.l = math.add(obj2.state.l, math.multiply(-1, deltaL));
+            }
+
+            // this.state.p = math.multiply(-1, this.state.p);
+        }
     }
 
     addFace(face) {
         this.faces.push(face);
     }
 
-    addVertex(vertexPos, vertexVel, isStatic) {
-        const vel = isStatic ? {
-            x: 0,
-            y: 0,
-            z: 0,
-        } : {
-            x: vertexVel.x,
-            y: vertexVel.y,
-            z: vertexVel.z,
-        }
+    addVertex(vertexPos) {
         const vertexData = {
             pos: vertexPos,
-            vel: vel,
-            acc: {
-                x: 0,
-                y: 0,
-                z: 0,
-            },
-            isStatic: isStatic,
+            isStatic: false,
         };
         this.vertices.push(vertexData);
     }
@@ -486,8 +605,9 @@ module.exports = class Simulator {
         }
 
         const aggr = new math.matrix(m);
+        const massPerPoint = this.mass / this.pointsInObject.length;
 
-        this.momentOfIntertia = math.divide(aggr, this.pointsInObject.length / 10);
+        this.momentOfIntertia = math.multiply(aggr, massPerPoint);
     }
 
     updateGeometry() {
@@ -516,8 +636,10 @@ module.exports = class Simulator {
         this.geometry.verticesNeedUpdate = true;
     }
 
-    createGeometry(initPos) {
+    createGeometry(initPos, initVel) {
+        this.state.p = math.multiply(this.mass, initVel);
         this.state.x = math.add(this.state.x, initPos);
+
         const globalPos = this.state.x;
 
         this.geometry = new THREE.Geometry();
