@@ -18,6 +18,44 @@ function pointInTriangle(p, a, b, c) {
     return (u >= 0) && (v >= 0) && (u + v < 1);
 }
 
+function getEdgeRelativeState(p1, p2, q1, q2) {
+    const a = math.subtract(p2, p1);
+    const a_u = math.normalize(a);
+
+    const b = math.subtract(q2, q1);
+    const b_u = math.normalize(b);
+
+    const n_u = math.normalize(math.cross(a, b));
+
+    const r = math.subtract(q1, p1);
+
+    const crossBN = math.cross(b_u, n_u);
+    const crossAN = math.cross(a_u, n_u);
+
+    const s = math.dot(r, crossBN) / math.dot(a, crossBN);
+    const t = -math.dot(r, crossAN) / math.dot(b, crossAN);
+
+    if (s < 0 || s > 1 || t < 0 || t > 1) {
+        return undefined;
+    }
+
+    const pa = math.add(p1, math.multiply(s, a));
+    const qa = math.add(q1, math.multiply(t, b));
+
+    const m = math.subtract(qa, pa);
+
+    return {
+        normal: n_u,
+        diff: m,
+        pa: pa,
+        qa: qa,
+        s: s,
+        t: t,
+        a: a,
+        b: b,
+    };
+}
+
 module.exports = class Simulator {
     constructor() {
         this.state = new ObjectState();
@@ -258,6 +296,52 @@ module.exports = class Simulator {
         }
 
         return collision;
+    }
+
+    checkEdgeEdgeCollision(timestep, obj) {
+        for (let i = 0; i < this.edges.length; i++) {
+            const edge1 = this.edges[i];
+
+            const p1 = this.vertices[edge1[0]].pos;
+            const p2 = this.vertices[edge1[1]].pos;
+
+            const lastWorldP1 = math.add(this.lastState.x, math.multiply(this.lastState.r, p1))._data;
+            const newWorldP1 = math.add(this.state.x, math.multiply(this.state.r, p1))._data;
+
+            const lastWorldP2 = math.add(this.lastState.x, math.multiply(this.lastState.r, p2))._data;
+            const newWorldP2 = math.add(this.state.x, math.multiply(this.state.r, p2))._data;
+
+            for (let j = 0; j < obj.edges.length; j++) {
+                const edge2 = obj.edges[j];
+
+                const q1 = obj.vertices[edge2[0]].pos;
+                const q2 = obj.vertices[edge2[1]].pos;
+
+                const lastWorldQ1 = math.add(obj.lastState.x, math.multiply(obj.lastState.r, q1))._data;
+                const newWorldQ1 = math.add(obj.state.x, math.multiply(obj.state.r, q1))._data;
+
+                const lastWorldQ2 = math.add(obj.lastState.x, math.multiply(obj.lastState.r, q2))._data;
+                const newWorldQ2 = math.add(obj.state.x, math.multiply(obj.state.r, q2))._data;
+
+                const newState = getEdgeRelativeState(newWorldP1, newWorldP2, newWorldQ1, newWorldQ2);
+                const lastState = getEdgeRelativeState(lastWorldP1, lastWorldP2, lastWorldQ1, lastWorldQ2);
+
+                if (newState === undefined || lastState === undefined) {
+                    continue;
+                }
+
+                const newDiff = newState.diff;
+                const lastDiff = lastState.diff;
+
+                const distDot = math.dot(newDiff, lastDiff);
+
+                if (distDot < 0) {
+                    const currDist = math.norm(newDiff);
+                    const lastDist = math.norm(lastDiff);
+
+                }
+            }
+        }
     }
 
     respondToCollision(collision) {

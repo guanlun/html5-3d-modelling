@@ -207,17 +207,13 @@ function pointInTriangle(p, a, b, c) {
 let simulating = false;
 
 function checkCollsion(timestep, objects) {
-    let earliestCollisionTime = Number.MAX_VALUE;
-    let earliestCollision;
+    let collisions = [];
 
-    const vertexFaceCollision = checkVertexFaceCollision(timestep, objects);
+    const vertexFaceCollisions = checkVertexFaceCollisions(timestep, objects);
+    collisions = collisions.concat(vertexFaceCollisions);
 
-    // console.log(vertexFaceCollision);
-
-    if (vertexFaceCollision) {
-        earliestCollision = vertexFaceCollision;
-        earliestCollisionTime = vertexFaceCollision.time;
-    }
+    const edgeEdgeCollisions = checkEdgeEdgeCollisions(timestep, objects);
+    collisions = collisions.concat(edgeEdgeCollisions);
 
     for (let oi = 0; oi < objects.length; oi++) {
         const obj = objects[oi];
@@ -225,11 +221,19 @@ function checkCollsion(timestep, objects) {
         const basePlaneCollision = obj.checkBasePlaneCollision(timestep);
 
         if (basePlaneCollision) {
-            if (basePlaneCollision && basePlaneCollision.time < earliestCollisionTime) {
-                earliestCollisionTime = basePlaneCollision.time;
+            collisions.push(basePlaneCollision)
+        }
+    }
 
-                earliestCollision = basePlaneCollision;
-            }
+    let earliestCollisionTime = Number.MAX_VALUE;
+    let earliestCollision;
+
+    for (let i = 0; i < collisions.length; i++) {
+        const col = collisions[i];
+
+        if (col.time < earliestCollisionTime) {
+            earliestCollisionTime = col.time;
+            earliestCollision = col;
         }
     }
 
@@ -257,42 +261,23 @@ function checkCollsion(timestep, objects) {
     // return earliestCollision;
 }
 
-function getEdgeRelativeState(p1, p2, q1, q2) {
-    const a = math.subtract(p2, p1);
-    const a_u = math.normalize(a);
+function checkEdgeEdgeCollisions(timestep, objects) {
+    const collisions = [];
 
-    const b = math.subtract(q2, q1);
-    const b_u = math.normalize(b);
+    for (let i = 0; i < objects.length; i++) {
+        for (let j = i + 1; j < objects.length; j++) {
+            const o1 = objects[i];
+            const o2 = objects[j];
 
-    const n_u = math.normalize(math.cross(a, b));
+            const col = o1.checkEdgeEdgeCollision(timestep, o2);
 
-    const r = math.subtract(q1, p1);
-
-    const crossBN = math.cross(b_u, n_u);
-    const crossAN = math.cross(a_u, n_u);
-
-    const s = math.dot(r, crossBN) / math.dot(a, crossBN);
-    const t = -math.dot(r, crossAN) / math.dot(b, crossAN);
-
-    if (s < 0 || s > 1 || t < 0 || t > 1) {
-        return undefined;
+            if (col) {
+                collision.push(col);
+            }
+        }
     }
 
-    const pa = math.add(p1, math.multiply(s, a));
-    const qa = math.add(q1, math.multiply(t, b));
-
-    const m = math.subtract(qa, pa);
-
-    return {
-        normal: n_u,
-        diff: m,
-        pa: pa,
-        qa: qa,
-        s: s,
-        t: t,
-        a: a,
-        b: b,
-    };
+    return collisions;
 }
 
 function checkEdgeEdgeCollision(timestep, obj1, obj2) {
@@ -356,16 +341,24 @@ function checkEdgeEdgeCollision(timestep, obj1, obj2) {
     return collision;
 }
 
-function checkVertexFaceCollision(timestep, objects) {
-    const c1 = objects[0].checkVertexFaceCollision(timestep, objects[1]);
-    const c2 = objects[1].checkVertexFaceCollision(timestep, objects[0]);
+function checkVertexFaceCollisions(timestep, objects) {
+    const collisions = [];
 
-    // TODO
-    if (c1) {
-        return c1;
-    } else {
-        return c1;
+    for (let i = 0; i < objects.length; i++) {
+        for (let j = i + 1; j < objects.length; j++) {
+            const c1 = objects[i].checkVertexFaceCollision(timestep, objects[j]);
+            if (c1) {
+                collisions.push(c1);
+            }
+
+            const c2 = objects[j].checkVertexFaceCollision(timestep, objects[i]);
+            if (c2) {
+                collisions.push(c2);
+            }
+        }
     }
+
+    return collisions;
 }
 
 let frame = 0;
