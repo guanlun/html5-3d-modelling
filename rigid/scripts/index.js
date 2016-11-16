@@ -1,22 +1,24 @@
 math.normalize = (vec) => {
-    const dim = math.norm(vec);
+    var dim = Math.sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
 
-    const ret = [];
-
-    for (let i = 0; i < vec.length; i++) {
-        ret[i] = vec[i] / dim;
-    }
-
-    return ret;
+    return [vec[0] / dim, vec[1] / dim, vec[2] / dim];
 }
 
-const Simulator = require('./Simulator');
-const scene = new THREE.Scene();
+math._cross = (vec1, vec2) => {
+    return [
+        vec1[1] * vec2[2] - vec1[2] * vec2[1],
+        vec1[2] * vec2[0] - vec1[0] * vec2[2],
+        vec1[0] * vec2[1] - vec1[1] * vec2[0],
+    ];
+}
 
-const WIDTH = 1000;
-const HEIGHT = 600;
+var Simulator = require('./Simulator');
+var scene = new THREE.Scene();
 
-const props = {
+var WIDTH = 1000;
+var HEIGHT = 600;
+
+var props = {
     camera: null,
     cameraPos: {
         x: 10,
@@ -32,35 +34,35 @@ const props = {
     jelly: null,
 }
 
-const renderer = new THREE.WebGLRenderer({
+var renderer = new THREE.WebGLRenderer({
     antialias: true,
 });
 
-const raycaster = new THREE.Raycaster();
-const mouseVec = new THREE.Vector2();
+var raycaster = new THREE.Raycaster();
+var mouseVec = new THREE.Vector2();
 
-let objectSimulators = [];
-let method = 'Euler';
-let stepSize = 0.01;
+var objectSimulators = [];
+var method = 'Euler';
+var stepSize = 0.01;
 
 function loadObj(filename, initPos, initRotation, initVel, callback) {
-    const simulator = new Simulator();
+    var simulator = new Simulator();
 
     $.get(filename, objData => {
-        const jellyObj = {};
-        const vertices = [];
+        var jellyObj = {};
+        var vertices = [];
 
-        const objLines = objData.split('\n');
+        var objLines = objData.split('\n');
 
-        for (let i = 0; i < objLines.length; i++) {
-            const line = objLines[i];
+        for (var i = 0; i < objLines.length; i++) {
+            var line = objLines[i];
 
             if (line[0] === '#' || line[0] === 'o' || line[0] === 's') {
                 continue;
             }
 
-            const segs = line.split(' ');
-            const dataType = segs[0];
+            var segs = line.split(' ');
+            var dataType = segs[0];
 
             if (dataType === 'v') {
                 simulator.addVertex([
@@ -69,16 +71,16 @@ function loadObj(filename, initPos, initRotation, initVel, callback) {
                     parseFloat(segs[3]),
                 ]);
             } else if (dataType === 'f') {
-                const face = {
+                var face = {
                     vertices: [],
                 };
 
-                for (let vI = 1; vI < segs.length; vI++) {
-                    const ref = segs[vI];
+                for (var vI = 1; vI < segs.length; vI++) {
+                    var ref = segs[vI];
 
-                    const vSegs = ref.split('/');
-                    const vRef = parseInt(vSegs[0]) - 1;
-                    const nRef = parseInt(vSegs[2]) - 1;
+                    var vSegs = ref.split('/');
+                    var vRef = parseInt(vSegs[0]) - 1;
+                    var nRef = parseInt(vSegs[2]) - 1;
 
                     face.vertices.push(vRef);
                 }
@@ -102,7 +104,7 @@ document.body.appendChild(renderer.domElement);
 
 renderer.domElement.onwheel = (evt) => {
     evt.preventDefault(0);
-    const multiplier = 1 + evt.deltaY * 0.001;
+    var multiplier = 1 + evt.deltaY * 0.001;
 
     props.cameraPos.x *= multiplier;
     props.cameraPos.z *= multiplier;
@@ -126,23 +128,23 @@ renderer.domElement.onmousemove = (evt) => {
         return;
     }
 
-    const currMousePos = {
+    var currMousePos = {
         x: evt.clientX,
         y: evt.clientY,
     };
 
-    const mousePosDiff = {
+    var mousePosDiff = {
         x: currMousePos.x - props.lastMousePos.x,
         y: currMousePos.y - props.lastMousePos.y,
     };
 
-    const distXZ = Math.sqrt(props.cameraPos.x * props.cameraPos.x + props.cameraPos.z * props.cameraPos.z);
-    const dist = Math.sqrt(distXZ * distXZ + props.cameraPos.y * props.cameraPos.y);
+    var distXZ = Math.sqrt(props.cameraPos.x * props.cameraPos.x + props.cameraPos.z * props.cameraPos.z);
+    var dist = Math.sqrt(distXZ * distXZ + props.cameraPos.y * props.cameraPos.y);
 
-    const currXZAngle = Math.atan2(props.cameraPos.z, props.cameraPos.x);
-    const newXZAngle = currXZAngle + mousePosDiff.x / 57.3;
-    const currYAngle = Math.atan2(props.cameraPos.y, distXZ);
-    const newYAngle = currYAngle + mousePosDiff.y / 57.3;
+    var currXZAngle = Math.atan2(props.cameraPos.z, props.cameraPos.x);
+    var newXZAngle = currXZAngle + mousePosDiff.x / 57.3;
+    var currYAngle = Math.atan2(props.cameraPos.y, distXZ);
+    var newYAngle = currYAngle + mousePosDiff.y / 57.3;
 
     props.cameraPos.x = dist * Math.cos(newYAngle) * Math.cos(newXZAngle);
     props.cameraPos.z = dist * Math.cos(newYAngle) * Math.sin(newXZAngle);
@@ -171,10 +173,10 @@ function initCamera() {
 }
 
 function initLight() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    var ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(30, 10, -30);
     scene.add(directionalLight);
 
@@ -186,7 +188,7 @@ function initLight() {
 initCamera();
 initLight();
 
-let simulating = false;
+var simulating = false;
 
 function aabbOverlap(aabb1, aabb2) {
     if (aabb1.maxX < aabb2.minX) {
@@ -217,50 +219,50 @@ function aabbOverlap(aabb1, aabb2) {
 }
 
 function checkCollsion(timestep, objects) {
-    let collisions = [];
+    var collisions = [];
 
-    for (let i = 0; i < objects.length; i++) {
-        const o1 = objects[i];
+    for (var i = 0; i < objects.length; i++) {
+        var o1 = objects[i];
 
-        const aabb1 = o1.getAABB();
+        var aabb1 = o1.getAABB();
 
-        for (let j = i + 1; j < objects.length; j++) {
-            const o2 = objects[j];
+        for (var j = i + 1; j < objects.length; j++) {
+            var o2 = objects[j];
 
-            const aabb2 = o2.getAABB();
+            var aabb2 = o2.getAABB();
 
             if (!aabbOverlap(aabb1, aabb2)) {
                 continue;
             }
 
-            const c1 = o1.checkVertexFaceCollision(timestep, o2);
+            var c1 = o1.checkVertexFaceCollision(timestep, o2);
             if (c1) {
                 collisions.push(c1);
             }
 
-            const c2 = o2.checkVertexFaceCollision(timestep, o1);
+            var c2 = o2.checkVertexFaceCollision(timestep, o1);
             if (c2) {
                 collisions.push(c2);
             }
 
-            const edgeEdge = o1.checkEdgeEdgeCollision(timestep, o2);
-            if (edgeEdge) {
-                collisions.push(edgeEdge);
+            var edgeEdgeCol = o1.checkEdgeEdgeCollision(timestep, o2);
+            if (edgeEdgeCol) {
+                collisions.push(edgeEdgeCol);
             }
         }
 
-        const basePlaneCollision = o1.checkBasePlaneCollision(timestep);
+        var basePlaneCollision = o1.checkBasePlaneCollision(timestep);
 
         if (basePlaneCollision) {
             collisions.push(basePlaneCollision);
         }
     }
 
-    let earliestCollisionTime = Number.MAX_VALUE;
-    let earliestCollision;
+    var earliestCollisionTime = Number.MAX_VALUE;
+    var earliestCollision;
 
-    for (let i = 0; i < collisions.length; i++) {
-        const col = collisions[i];
+    for (var i = 0; i < collisions.length; i++) {
+        var col = collisions[i];
 
         if (col.time < earliestCollisionTime) {
             earliestCollisionTime = col.time;
@@ -271,30 +273,31 @@ function checkCollsion(timestep, objects) {
     return earliestCollision;
 }
 
-let frame = 0;
+var frame = 0;
 
 function simulate() {
     frame++;
     if (simulating) {
-        let timeRemaining = stepSize;
-        let collision;
+        var timeRemaining = stepSize;
+        var collision;
 
-        let iter = 0;
+        var iter = 0;
 
         while (timeRemaining > (0.01 * stepSize) && iter < 10) {
+            // console.log(iter);
             iter++;
 
-            let timeSimulated = timeRemaining;
+            var timeSimulated = timeRemaining;
 
             objectSimulators.forEach(simulator => {
                 simulator.simulate(method, timeRemaining);
             });
 
-            const collision = checkCollsion(timeSimulated, objectSimulators);
+            var collision = checkCollsion(timeSimulated, objectSimulators);
 
             if (collision) {
                 // simulating = false;
-                console.log(collision);
+                // console.log(collision);
 
                 timeSimulated = collision.time;
 
@@ -305,37 +308,37 @@ function simulate() {
                 });
 
                 if (collision.type === 'static-plane') {
-                    const {
+                    var {
                         obj,
                         r_a,
                         normal,
                     } = collision;
 
                     // TODO: optimize
-                    const inverseI0 = math.inv(obj.momentOfIntertia);
-                    const inverseI = math.multiply(math.multiply(obj.state.r, inverseI0), math.transpose(obj.state.r));
+                    var inverseI0 = math.inv(obj.momentOfIntertia);
+                    var inverseI = math.multiply(math.multiply(obj.state.r, inverseI0), math.transpose(obj.state.r));
 
-                    const w = math.multiply(inverseI, obj.state.l)._data;
+                    var w = math.multiply(inverseI, obj.state.l)._data;
 
-                    const v = math.divide(obj.state.p, obj.mass);
-                    const pDerivative = math.add(v, math.cross(w, r_a));
+                    var v = math.divide(obj.state.p, obj.mass);
+                    var pDerivative = math.add(v, math.cross(w, r_a));
                     // console.log(frame, stepSize, obj.state.p, w, r_a, pDerivative);
 
-                    // const v_before = math.divide(obj.state.p, obj.mass);
-                    const v_normal_before = math.dot(pDerivative, normal);
+                    // var v_before = math.divide(obj.state.p, obj.mass);
+                    var v_normal_before = math.dot(pDerivative, normal);
 
-                    const n = -(1 + obj.c_r) * v_normal_before;
-                    const d = 1 / obj.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
-                    const j = n / d;
+                    var n = -(1 + obj.c_r) * v_normal_before;
+                    var d = 1 / obj.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
+                    var j = n / d;
 
-                    const deltaP = math.multiply(1 * j, normal);
-                    const deltaL = math.multiply(1, math.cross(r_a, deltaP));
+                    var deltaP = math.multiply(1 * j, normal);
+                    var deltaL = math.multiply(1, math.cross(r_a, deltaP));
 
                     obj.state.p = math.multiply(-obj.c_r, obj.state.p)
                     obj.state.l = math.add(obj.state.l, deltaL);
 
                 } else {
-                    const {
+                    var {
                         obj1,
                         obj2,
                         r_a,
@@ -343,17 +346,17 @@ function simulate() {
                         normal,
                     } = collision;
 
-                    const v_before = math.subtract(math.divide(obj1.state.p, obj1.mass), math.divide(obj2.state.p, obj2.mass));
-                    const v_normal_before = math.dot(v_before, normal);
+                    var v_before = math.subtract(math.divide(obj1.state.p, obj1.mass), math.divide(obj2.state.p, obj2.mass));
+                    var v_normal_before = math.dot(v_before, normal);
 
-                    const inverseIA0 = math.inv(obj1.momentOfIntertia);
-                    const inverseIA = math.multiply(math.multiply(obj1.state.r, inverseIA0), math.transpose(obj1.state.r));
+                    var inverseIA0 = math.inv(obj1.momentOfIntertia);
+                    var inverseIA = math.multiply(math.multiply(obj1.state.r, inverseIA0), math.transpose(obj1.state.r));
 
-                    const inverseIB0 = math.inv(obj2.momentOfIntertia);
-                    const inverseIB = math.multiply(math.multiply(obj2.state.r, inverseIB0), math.transpose(obj2.state.r));
+                    var inverseIB0 = math.inv(obj2.momentOfIntertia);
+                    var inverseIB = math.multiply(math.multiply(obj2.state.r, inverseIB0), math.transpose(obj2.state.r));
 
-                    const n = -(1 + obj1.c_r) * v_normal_before;
-                    const d = 1 / obj1.mass + 1 / obj2.mass +
+                    var n = -(1 + obj1.c_r) * v_normal_before;
+                    var d = 1 / obj1.mass + 1 / obj2.mass +
                             math.dot(normal,
                                 math.add(
                                     math.cross(math.multiply(inverseIA, math.cross(r_a, normal)), r_a),
@@ -361,14 +364,14 @@ function simulate() {
                                 )
                             );
 
-                    const j = n / d;
+                    var j = n / d;
 
-                    const deltaP1 = math.multiply(1 * j, normal);
-                    const deltaL1 = math.multiply(1 * j, math.cross(r_a, normal));
-                    const deltaP2 = math.multiply(-1 * j, normal);
-                    const deltaL2 = math.multiply(-1 * j, math.cross(r_b, normal))
+                    var deltaP1 = math.multiply(1 * j, normal);
+                    var deltaL1 = math.multiply(1 * j, math.cross(r_a, normal));
+                    var deltaP2 = math.multiply(-1 * j, normal);
+                    var deltaL2 = math.multiply(-1 * j, math.cross(r_b, normal))
 
-                    const coeff = 3;
+                    var coeff = 3;
 
                     // console.log(deltaL1, deltaL2);
 
@@ -390,14 +393,14 @@ function simulate() {
 }
 simulate();
 
-const meshes = [];
+var meshes = [];
 
-const startPauseBtn = $('#start-pause-btn');
+var startPauseBtn = $('#start-pause-btn');
 startPauseBtn.click(e => {
     simulating = !simulating;
 });
 
-const loadPreset1Btn = $('#load-preset-1-btn');
+var loadPreset1Btn = $('#load-preset-1-btn');
 loadPreset1Btn.click(e => {
     objectSimulators = [];
     meshes.forEach(m => {
@@ -416,9 +419,9 @@ loadPreset1Btn.click(e => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
-        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+        var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
             color: 'red',
-            wireframe: true,
+            // wireframe: true,
         }));
 
         scene.add(mesh);
@@ -437,9 +440,9 @@ loadPreset1Btn.click(e => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
-        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+        var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
             color: 'blue',
-            wireframe: true,
+            // wireframe: true,
         }));
 
         scene.add(mesh);
@@ -447,9 +450,9 @@ loadPreset1Btn.click(e => {
     });
 });
 
-const planeGeometry = new THREE.PlaneGeometry(100, 100);
+var planeGeometry = new THREE.PlaneGeometry(100, 100);
 
-const plane = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({
+var plane = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({
     color: 'blue',
     transparent: true,
     opacity: 0.3,
@@ -459,20 +462,20 @@ plane.rotation.x = -Math.PI / 2;
 
 scene.add(plane);
 
-const loadPreset2Btn = $('#load-preset-2-btn');
+var loadPreset2Btn = $('#load-preset-2-btn');
 loadPreset2Btn.click(e => {
 });
 
-const loadPreset3Btn = $('#load-preset-3-btn');
+var loadPreset3Btn = $('#load-preset-3-btn');
 loadPreset3Btn.click(e => {
 });
 
-const stepSizeSlider = $('#step-size-slider');
+var stepSizeSlider = $('#step-size-slider');
 stepSizeSlider.change(e => {
     stepSize = stepSizeSlider.val();
 });
 
-const methodSelect = $('#method-select');
+var methodSelect = $('#method-select');
 methodSelect.change(e => {
     method = methodSelect.val();
 });
