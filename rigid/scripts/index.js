@@ -186,24 +186,6 @@ function initLight() {
 initCamera();
 initLight();
 
-function pointInTriangle(p, a, b, c) {
-    const v0 = math.subtract(c, a);
-    const v1 = math.subtract(b, a);
-    const v2 = math.subtract(p, a);
-
-    const dot00 = math.dot(v0, v0);
-    const dot01 = math.dot(v0, v1);
-    const dot02 = math.dot(v0, v2);
-    const dot11 = math.dot(v1, v1);
-    const dot12 = math.dot(v1, v2);
-
-    const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-    const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-    return (u >= 0) && (v >= 0) && (u + v < 1);
-}
-
 let simulating = false;
 
 function checkCollsion(timestep, objects) {
@@ -238,27 +220,6 @@ function checkCollsion(timestep, objects) {
     }
 
     return earliestCollision;
-
-
-    // const collisions = [];
-    // collisions.push(checkVertexFaceCollision(timestep, obj1, obj2));
-    // collisions.push(checkVertexFaceCollision(timestep, obj2, obj1));
-    // collisions.push(checkEdgeEdgeCollision(timestep, obj1, obj2));
-    //
-    // let earliestCollisionTime = Number.MAX_VALUE;
-    // let earliestCollision;
-    //
-    // for (let ci = 0; ci < collisions.length; ci++) {
-    //     const collision = collisions[ci];
-    //
-    //     if (collision && collision.time < earliestCollisionTime) {
-    //         earliestCollisionTime = collision.time;
-    //
-    //         earliestCollision = collision;
-    //     }
-    // }
-    //
-    // return earliestCollision;
 }
 
 function checkEdgeEdgeCollisions(timestep, objects) {
@@ -272,73 +233,12 @@ function checkEdgeEdgeCollisions(timestep, objects) {
             const col = o1.checkEdgeEdgeCollision(timestep, o2);
 
             if (col) {
-                collision.push(col);
+                collisions.push(col);
             }
         }
     }
 
     return collisions;
-}
-
-function checkEdgeEdgeCollision(timestep, obj1, obj2) {
-    let earliestCollisionTime = timestep;
-    let collision;
-
-    for (let i = 0; i < obj1.edges.length; i++) {
-        const edge1 = obj1.edges[i];
-
-        const p1 = obj1.vertices[edge1[0]].pos;
-        const p2 = obj1.vertices[edge1[1]].pos;
-
-        const lastP1 = obj1.lastState[edge1[0]].pos;
-        const lastP2 = obj1.lastState[edge1[1]].pos;
-
-        for (let j = 0; j < obj2.edges.length; j++) {
-            const edge2 = obj2.edges[j];
-
-            const q1 = obj2.vertices[edge2[0]].pos;
-            const q2 = obj2.vertices[edge2[1]].pos;
-
-            const lastQ1 = obj2.lastState[edge2[0]].pos;
-            const lastQ2 = obj2.lastState[edge2[1]].pos;
-
-            const currState = getEdgeRelativeState(p1, p2, q1, q2);
-            const lastState = getEdgeRelativeState(lastP1, lastP2, lastQ1, lastQ2);
-
-            if (currState === undefined || lastState === undefined) {
-                continue;
-            }
-
-            const currDiff = currState.diff;
-            const lastDiff = lastState.diff;
-
-            const distDot = math.dot(currDiff, lastDiff);
-
-            if (distDot < 0) {
-                const currDist = math.norm(currDiff);
-                const lastDist = math.norm(lastDiff);
-
-                const candidateCollisionTimeFraction = lastDist / (lastDist + currDist) * timestep;
-
-                if (candidateCollisionTimeFraction < earliestCollisionTime) {
-                    earliestCollisionTime = candidateCollisionTimeFraction;
-
-                    collision = {
-                        time: earliestCollisionTime,
-                        type: 'edge-edge',
-                        obj1: obj1,
-                        obj2: obj2,
-                        edge1: edge1,
-                        edge2, edge2,
-                        normal: currState.normal,
-                        pos: currState.pa,
-                    }
-                }
-            }
-        }
-    }
-
-    return collision;
 }
 
 function checkVertexFaceCollisions(timestep, objects) {
