@@ -41,7 +41,7 @@ const mouseVec = new THREE.Vector2();
 
 let objectSimulators = [];
 let method = 'Euler';
-let stepSize = 0.001;
+let stepSize = 0.01;
 
 function loadObj(filename, initPos, initRotation, initVel, callback) {
     const simulator = new Simulator();
@@ -249,11 +249,11 @@ function checkCollsion(timestep, objects) {
             }
         }
 
-        // const basePlaneCollision = o1.checkBasePlaneCollision(timestep);
-        //
-        // if (basePlaneCollision) {
-        //     collisions.push(basePlaneCollision);
-        // }
+        const basePlaneCollision = o1.checkBasePlaneCollision(timestep);
+
+        if (basePlaneCollision) {
+            collisions.push(basePlaneCollision);
+        }
     }
 
     let earliestCollisionTime = Number.MAX_VALUE;
@@ -311,19 +311,25 @@ function simulate() {
                         normal,
                     } = collision;
 
-                    const v_before = math.divide(obj.state.p, obj.mass);
-                    const v_normal_before = math.dot(v_before, normal);
-
                     // TODO: optimize
                     const inverseI0 = math.inv(obj.momentOfIntertia);
                     const inverseI = math.multiply(math.multiply(obj.state.r, inverseI0), math.transpose(obj.state.r));
+
+                    const w = math.multiply(inverseI, obj.state.l)._data;
+
+                    const v = math.divide(obj.state.p, obj.mass);
+                    const pDerivative = math.add(v, math.cross(w, r_a));
+                    // console.log(frame, stepSize, obj.state.p, w, r_a, pDerivative);
+
+                    // const v_before = math.divide(obj.state.p, obj.mass);
+                    const v_normal_before = math.dot(pDerivative, normal);
 
                     const n = -(1 + obj.c_r) * v_normal_before;
                     const d = 1 / obj.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
                     const j = n / d;
 
-                    const deltaP = math.multiply(3 * j, normal);
-                    const deltaL = math.multiply(3, math.cross(r_a, deltaP));
+                    const deltaP = math.multiply(1 * j, normal);
+                    const deltaL = math.multiply(1, math.cross(r_a, deltaP));
 
                     obj.state.p = math.multiply(-obj.c_r, obj.state.p)
                     obj.state.l = math.add(obj.state.l, deltaL);
@@ -357,16 +363,20 @@ function simulate() {
 
                     const j = n / d;
 
-                    const deltaP = math.multiply(1 * j, normal);
-                    const deltaL = math.multiply(1, math.cross(r_a, deltaP));
+                    const deltaP1 = math.multiply(1 * j, normal);
+                    const deltaL1 = math.multiply(1 * j, math.cross(r_a, normal));
+                    const deltaP2 = math.multiply(-1 * j, normal);
+                    const deltaL2 = math.multiply(-1 * j, math.cross(r_b, normal))
 
                     const coeff = 3;
 
-                    obj1.state.p = math.add(obj1.state.p, math.multiply(coeff, deltaP));
-                    obj1.state.l = math.add(obj1.state.l, math.multiply(coeff, deltaL));
+                    // console.log(deltaL1, deltaL2);
 
-                    obj2.state.p = math.add(obj2.state.p, math.multiply(-coeff, deltaP));
-                    obj2.state.l = math.add(obj2.state.l, math.multiply(-coeff, deltaL));
+                    obj1.state.p = math.add(obj1.state.p, math.multiply(coeff, deltaP1));
+                    obj1.state.l = math.add(obj1.state.l, math.multiply(coeff, deltaL1));
+
+                    obj2.state.p = math.add(obj2.state.p, math.multiply(coeff, deltaP2));
+                    obj2.state.l = math.add(obj2.state.l, math.multiply(coeff, deltaL2));
                 }
             }
 
@@ -401,7 +411,7 @@ loadPreset1Btn.click(e => {
             [0, 1, 0],
             [0, 0, 1],
         ],
-        [0, 0, -0.02],
+        [0, 0, -1.0],
         obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
@@ -422,7 +432,7 @@ loadPreset1Btn.click(e => {
             [-0.5, 0.866, 0],
             [0, 0, 1],
         ],
-        [0.01, 0, 0.03],
+        [0.01, 0, 0.8],
         obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
@@ -437,7 +447,7 @@ loadPreset1Btn.click(e => {
     });
 });
 
-const planeGeometry = new THREE.PlaneGeometry(10, 10);
+const planeGeometry = new THREE.PlaneGeometry(100, 100);
 
 const plane = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({
     color: 'blue',

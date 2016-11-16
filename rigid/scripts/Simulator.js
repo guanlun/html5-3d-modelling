@@ -63,7 +63,7 @@ module.exports = class Simulator {
         this.edges = [];
 
         this.mass = 1;
-        this.c_r = 0.9;
+        this.c_r = 0.4;
 
         this.globalVertexPos = [];
         this.lastGlobalVertexPos =[];
@@ -94,24 +94,24 @@ module.exports = class Simulator {
     }
 
     euler(t) {
-        const dState = this.computeDerivative(this.state, t);
+        const dState = this.computeDerivative(this.state);
 
         this.updateState(this.applyStateDerivative(this.state, dState, t));
     }
 
     rk2(t) {
-        const dState = this.computeDerivative(this.state, t / 2);
+        const dState = this.computeDerivative(this.state);
         const halfPosState = this.applyStateDerivative(this.state, dState, t / 2);
 
-        const secondOrderState = this.computeDerivative(halfPosState, t);
+        const secondOrderState = this.computeDerivative(halfPosState);
 
         this.updateState(this.applyStateDerivative(this.state, secondOrderState, t));
     }
 
-    computeDerivative(state, mass) {
+    computeDerivative(state) {
         const dState = new ObjectState();
 
-        dState.x = math.divide(state.p, mass);
+        dState.x = math.divide(state.p, this.mass);
 
         const inverseI0 = math.inv(this.momentOfIntertia);
         const inverseI = math.multiply(math.multiply(state.r, inverseI0), math.transpose(state.r));
@@ -126,6 +126,9 @@ module.exports = class Simulator {
         dState.r = math.multiply(wMtx, state.r);
 
         dState.p = [0, -1, 0];
+
+        const yVel = state.p[1] / this.mass;
+
         dState.l = [0, 0, 0];
 
         return dState;
@@ -247,8 +250,6 @@ module.exports = class Simulator {
                             collision = {
                                 time: earliestCollisionTime,
                                 type: 'vertex-face',
-                                // vertex: vertex,
-                                // face: [faceV1, faceV2, faceV3],
                                 normal: lastFaceNormal,
                                 obj1: this,
                                 obj2: obj,
@@ -318,8 +319,6 @@ module.exports = class Simulator {
                             r_a: math.subtract(collisionPos, this.state.x),
                             r_b: math.subtract(collisionPos, obj.state.x),
                         };
-
-                        // console.log(collision);
                     }
                 }
             }
