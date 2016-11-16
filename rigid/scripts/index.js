@@ -212,6 +212,8 @@ function checkCollsion(timestep, objects) {
 
     const vertexFaceCollision = checkVertexFaceCollision(timestep, objects);
 
+    // console.log(vertexFaceCollision);
+
     if (vertexFaceCollision) {
         earliestCollision = vertexFaceCollision;
         earliestCollisionTime = vertexFaceCollision.time;
@@ -355,15 +357,15 @@ function checkEdgeEdgeCollision(timestep, obj1, obj2) {
 }
 
 function checkVertexFaceCollision(timestep, objects) {
-    // const c1 = objects[0].checkVertexFaceCollision(timestep, objects[1]);
-    // const c2 = objects[1].checkVertexFaceCollision(timestep, objects[0]);
-    //
-    // // TODO
-    // if (c1) {
-    //     return c1;
-    // } else {
-    //     return c1;
-    // }
+    const c1 = objects[0].checkVertexFaceCollision(timestep, objects[1]);
+    const c2 = objects[1].checkVertexFaceCollision(timestep, objects[0]);
+
+    // TODO
+    if (c1) {
+        return c1;
+    } else {
+        return c1;
+    }
 }
 
 let frame = 0;
@@ -442,18 +444,18 @@ loadPreset1Btn.click(e => {
         meshes.push(mesh);
     });
 
-    // loadObj('obj/box.obj', [1, 7, 3], [0, 0, -0.05], obj => {
-    //     objectSimulators.push(obj);
-    //     obj.geometry.computeFaceNormals();
-    //
-    //     const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
-    //         color: 'blue',
-    //         wireframe: true,
-    //     }));
-    //
-    //     scene.add(mesh);
-    //     meshes.push(mesh);
-    // });
+    loadObj('obj/box.obj', [1, 7, 3], [0, 0, -0.05], obj => {
+        objectSimulators.push(obj);
+        obj.geometry.computeFaceNormals();
+
+        const mesh = new THREE.Mesh(obj.geometry, new THREE.MeshBasicMaterial({
+            color: 'blue',
+            wireframe: true,
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
 });
 
 const planeGeometry = new THREE.PlaneGeometry(10, 10);

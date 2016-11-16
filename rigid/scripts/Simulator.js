@@ -27,7 +27,7 @@ module.exports = class Simulator {
         this.edges = [];
 
         this.mass = 1;
-        this.c_r = 0.8;
+        this.c_r = 0.3;
     }
 
     saveState() {
@@ -91,99 +91,18 @@ module.exports = class Simulator {
     }
 
     euler(t) {
-        this.computeSystemDynamics(t);
+        const dState = this.computeDerivative(this.state, t);
 
-        for (let vi = 0; vi < this.vertices.length; vi++) {
-            const vertex = this.vertices[vi];
-
-            if (vertex.isStatic) {
-                continue;
-            }
-
-            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t, vertex.vel));
-        }
+        this.state = this.applyStateDerivative(this.state, dState, t);
     }
 
-    rk4(t) {
-        // k1
-        this.computeSystemDynamics(t / 2);
+    rk2(t) {
+        const dState = this.computeDerivative(this.state, t / 2);
+        const halfPosState = this.applyStateDerivative(this.state, dState, t / 2);
 
-        const k1 = [];
+        const secondOrderState = this.computeDerivative(halfPosState, t);
 
-        for (let vi = 0; vi < this.vertices.length; vi++) {
-            const vertex = this.vertices[vi];
-
-            k1.push({
-                x: vertex.vel.x,
-                y: vertex.vel.y,
-                z: vertex.vel.z,
-            });
-
-            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
-        }
-
-        // k2
-        this.computeSystemDynamics(t / 2);
-
-        const k2 = [];
-
-        this.goBackToOrigPos();
-
-        for (let vi = 0; vi < this.vertices.length; vi++) {
-            const vertex = this.vertices[vi];
-
-            k2.push({
-                x: vertex.vel.x,
-                y: vertex.vel.y,
-                z: vertex.vel.z,
-            });
-
-            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
-        }
-
-        // k3
-        this.computeSystemDynamics(t / 2);
-
-        const k3 = [];
-
-        this.goBackToOrigPos();
-
-        for (let vi = 0; vi < this.vertices.length; vi++) {
-            const vertex = this.vertices[vi];
-
-            k3.push({
-                x: vertex.vel.x,
-                y: vertex.vel.y,
-                z: vertex.vel.z,
-            });
-
-            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t / 2, vertex.vel));
-        }
-
-        // k4
-        this.computeSystemDynamics(t);
-
-        const k4 = [];
-
-        this.goBackToOrigPos();
-
-        for (let vi = 0; vi < this.vertices.length; vi++) {
-            const vertex = this.vertices[vi];
-
-            k4.push({
-                x: vertex.vel.x,
-                y: vertex.vel.y,
-                z: vertex.vel.z,
-            });
-        }
-
-        for (let vi = 0; vi < this.vertices.length; vi++) {
-            const vertex = this.vertices[vi];
-
-            vertex.vel = VecMath.scalarMult(1 / 6, VecMath.add(k1[vi], VecMath.scalarMult(2, k2[vi]), VecMath.scalarMult(2, k3[vi]), k4[vi]));
-
-            vertex.pos = VecMath.add(vertex.pos, VecMath.scalarMult(t, vertex.vel));
-        }
+        this.state = this.applyStateDerivative(this.state, secondOrderState, t);
     }
 
     computeDerivative(state, mass) {
@@ -227,32 +146,12 @@ module.exports = class Simulator {
 
         this.lastState = this.state;
 
-        let dState = this.computeDerivative(this.state, t);
 
-        this.state = this.applyStateDerivative(this.state, dState, t);
-
-        // const collision = this.checkCollsion(this.state, newState);
-        //
-        // if (collision) {
-        //     const timeSimulated = collision.timeFraction * t;
-        //
-        //     newState = this.applyStateDerivative(this.state, dState, timeSimulated);
-        //
-        //     this.state.p = [0, -0.8 * this.state.p[1], 0];
-        //
-        //     const timeRemaining = t - timeSimulated;
-        //
-        //     dState = this.computeDerivative(this.state, timeRemaining);
-        //     newState = this.applyStateDerivative(this.state, dState, timeRemaining);
-        // }
-
-        // this.state = newState;
-
-        // if (method === 'Euler') {
-        //     this.euler(t);
-        // } else {
-        //     this.rk4(t);
-        // }
+        if (method === 'Euler') {
+            this.euler(t);
+        } else {
+            this.rk2(t);
+        }
 
         this.updateGeometry();
     }
@@ -282,7 +181,8 @@ module.exports = class Simulator {
                     obj: this,
                     time: lastY / (lastY - newY) * timestep,
                     normal: [0, 1, 0],
-                    r_a: p,
+                    // TODO: using last state is not accurate
+                    r_a: math.subtract(lastWorldPos, lastState.x),
                 };
             }
         }
@@ -361,6 +261,7 @@ module.exports = class Simulator {
     }
 
     respondToCollision(collision) {
+        // console.log(collision);
         if (collision.type === 'static-plane') {
             if (collision.obj == this) {
                 const {
@@ -379,12 +280,14 @@ module.exports = class Simulator {
                 const d = 1 / this.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
                 const j = n / d;
 
-                const deltaP = math.multiply(1 * j, normal);
-                const deltaL = math.multiply(1, math.cross(r_a, deltaP));
+                const deltaP = math.multiply(3 * j, normal);
+                const deltaL = math.multiply(3, math.cross(r_a, deltaP));
 
-                this.state.p = math.add(this.state.p, deltaP);
+                // this.state.p = math.add(this.state.p, deltaP);
+                this.state.p = math.multiply(-this.c_r, this.state.p)
                 this.state.l = math.add(this.state.l, deltaL);
-                // console.log(this.state.l);
+
+
                 // console.log('--------------------');
             }
         } else {
@@ -420,11 +323,11 @@ module.exports = class Simulator {
                 const deltaP = math.multiply(1 * j, normal);
                 const deltaL = math.multiply(1, math.cross(r_a, deltaP));
 
-                obj1.state.p = math.add(obj1.state.p, math.multiply(1, deltaP));
-                obj1.state.l = math.add(obj1.state.l, math.multiply(1, deltaL));
+                obj1.state.p = math.add(obj1.state.p, math.multiply(3, deltaP));
+                obj1.state.l = math.add(obj1.state.l, math.multiply(3, deltaL));
 
-                obj2.state.p = math.add(obj2.state.p, math.multiply(-1, deltaP));
-                obj2.state.l = math.add(obj2.state.l, math.multiply(-1, deltaL));
+                obj2.state.p = math.add(obj2.state.p, math.multiply(-3, deltaP));
+                obj2.state.l = math.add(obj2.state.l, math.multiply(-3, deltaL));
             }
 
             // this.state.p = math.multiply(-1, this.state.p);
