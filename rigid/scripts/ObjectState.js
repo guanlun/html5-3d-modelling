@@ -10,7 +10,7 @@ module.exports = class ObjectState {
         ]);
 
         // this.l = [0, 0, 0];
-        this.l = [0, Math.random() * 10, 10];
+        this.l = [0, Math.random() * 5, 2];
 
         // this.r = math.matrix([
         //     [0.866, 0.5, 0],

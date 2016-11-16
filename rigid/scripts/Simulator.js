@@ -63,7 +63,7 @@ module.exports = class Simulator {
         this.edges = [];
 
         this.mass = 1;
-        this.c_r = 0.3;
+        this.c_r = 0.9;
 
         this.globalVertexPos = [];
         this.lastGlobalVertexPos =[];
@@ -313,11 +313,13 @@ module.exports = class Simulator {
                             time: earliestCollisionTime,
                             type: 'edge-edge',
                             normal: newState.normal,
-                            // obj1: this,
-                            // obj2: obj,
+                            obj1: this,
+                            obj2: obj,
                             r_a: math.subtract(collisionPos, this.state.x),
                             r_b: math.subtract(collisionPos, obj.state.x),
-                        }
+                        };
+
+                        // console.log(collision);
                     }
                 }
             }
@@ -326,78 +328,50 @@ module.exports = class Simulator {
         return collision;
     }
 
-    respondToCollision(collision) {
-        // console.log(collision);
-        if (collision.type === 'static-plane') {
-            if (collision.obj == this) {
-                const {
-                    r_a,
-                    normal,
-                } = collision;
+    getAABB() {
+        let minX = Number.MAX_VALUE;
+        let maxX = -Number.MAX_VALUE;
+        let minY = Number.MAX_VALUE;
+        let maxY = -Number.MAX_VALUE;
+        let minZ = Number.MAX_VALUE;
+        let maxZ = -Number.MAX_VALUE;
 
-                const v_before = math.divide(this.state.p, this.mass);
-                const v_normal_before = math.dot(v_before, normal);
+        for (let vi = 0; vi < this.vertices.length; vi++) {
+            const vertex = this.globalVertexPos[vi];
 
-                // TODO: optimize
-                const inverseI0 = math.inv(this.momentOfIntertia);
-                const inverseI = math.multiply(math.multiply(this.state.r, inverseI0), math.transpose(this.state.r));
-
-                const n = -(1 + this.c_r) * v_normal_before;
-                const d = 1 / this.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
-                const j = n / d;
-
-                const deltaP = math.multiply(3 * j, normal);
-                const deltaL = math.multiply(3, math.cross(r_a, deltaP));
-
-                // this.state.p = math.add(this.state.p, deltaP);
-                this.state.p = math.multiply(-this.c_r, this.state.p)
-                this.state.l = math.add(this.state.l, deltaL);
-
-
-                // console.log('--------------------');
-            }
-        } else {
-            if (collision.obj1 == this || collision.obj2 == this) {
-                const {
-                    obj1,
-                    obj2,
-                    r_a,
-                    r_b,
-                    normal,
-                } = collision;
-
-                const v_before = math.divide(math.subtract(obj1.state.p, obj2.state.p), this.mass);
-                const v_normal_before = math.dot(v_before, normal);
-
-                const inverseIA0 = math.inv(obj1.momentOfIntertia);
-                const inverseIA = math.multiply(math.multiply(obj1.state.r, inverseIA0), math.transpose(obj1.state.r));
-
-                const inverseIB0 = math.inv(obj2.momentOfIntertia);
-                const inverseIB = math.multiply(math.multiply(obj2.state.r, inverseIB0), math.transpose(obj2.state.r));
-
-                const n = -(1 + this.c_r) * v_normal_before;
-                const d = 1 / obj1.mass + 1 / obj2.mass +
-                        math.dot(normal,
-                            math.add(
-                                math.cross(math.multiply(inverseIA, math.cross(r_a, normal)), r_a),
-                                math.cross(math.multiply(inverseIB, math.cross(r_b, normal)), r_b)
-                            )
-                        );
-
-                const j = n / d;
-
-                const deltaP = math.multiply(1 * j, normal);
-                const deltaL = math.multiply(1, math.cross(r_a, deltaP));
-
-                obj1.state.p = math.add(obj1.state.p, math.multiply(3, deltaP));
-                obj1.state.l = math.add(obj1.state.l, math.multiply(3, deltaL));
-
-                obj2.state.p = math.add(obj2.state.p, math.multiply(-3, deltaP));
-                obj2.state.l = math.add(obj2.state.l, math.multiply(-3, deltaL));
+            if (vertex[0] > maxX) {
+                maxX = vertex[0];
             }
 
-            // this.state.p = math.multiply(-1, this.state.p);
+            if (vertex[0] < minX) {
+                minX = vertex[0];
+            }
+
+            if (vertex[1] > maxY) {
+                maxY = vertex[1];
+            }
+
+            if (vertex[1] < minY) {
+                minY = vertex[1];
+            }
+
+            if (vertex[2] > maxZ) {
+                maxZ = vertex[2];
+            }
+
+            if (vertex[2] < minZ) {
+                minZ = vertex[2];
+            }
         }
+
+        return {
+            minX: minX,
+            maxX: maxX,
+            minY: minY,
+            maxY: maxY,
+            minZ: minZ,
+            maxZ: maxZ,
+        };
     }
 
     addFace(face) {
@@ -605,11 +579,12 @@ module.exports = class Simulator {
         this.geometry.verticesNeedUpdate = true;
     }
 
-    createGeometry(initPos, initVel) {
+    createGeometry(initPos, initRotation, initVel) {
         const initialState = new ObjectState();
 
         initialState.p = math.multiply(this.mass, initVel);
         initialState.x = math.add(initialState.x, initPos);
+        initialState.r = math.matrix(initRotation);
 
         this.updateState(initialState);
 

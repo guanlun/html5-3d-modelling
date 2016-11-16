@@ -43,7 +43,7 @@ let objectSimulators = [];
 let method = 'Euler';
 let stepSize = 0.001;
 
-function loadObj(filename, initPos, initVel, callback) {
+function loadObj(filename, initPos, initRotation, initVel, callback) {
     const simulator = new Simulator();
 
     $.get(filename, objData => {
@@ -90,7 +90,7 @@ function loadObj(filename, initPos, initVel, callback) {
         simulator.computeCenterOfMass();
         simulator.recenter();
         simulator.computeMomentOfInertia();
-        simulator.createGeometry(initPos, initVel);
+        simulator.createGeometry(initPos, initRotation, initVel);
 
         callback(simulator);
     });
@@ -188,23 +188,72 @@ initLight();
 
 let simulating = false;
 
+function aabbOverlap(aabb1, aabb2) {
+    if (aabb1.maxX < aabb2.minX) {
+        return false;
+    }
+
+    if (aabb1.minX > aabb2.maxX) {
+        return false;
+    }
+
+    if (aabb1.maxY < aabb2.minY) {
+        return false;
+    }
+
+    if (aabb1.minY > aabb2.maxY) {
+        return false;
+    }
+
+    if (aabb1.maxZ < aabb2.minZ) {
+        return false;
+    }
+
+    if (aabb1.minZ > aabb2.maxZ) {
+        return false;
+    }
+
+    return true;
+}
+
 function checkCollsion(timestep, objects) {
     let collisions = [];
 
-    const vertexFaceCollisions = checkVertexFaceCollisions(timestep, objects);
-    collisions = collisions.concat(vertexFaceCollisions);
+    for (let i = 0; i < objects.length; i++) {
+        const o1 = objects[i];
 
-    const edgeEdgeCollisions = checkEdgeEdgeCollisions(timestep, objects);
-    collisions = collisions.concat(edgeEdgeCollisions);
+        const aabb1 = o1.getAABB();
 
-    for (let oi = 0; oi < objects.length; oi++) {
-        const obj = objects[oi];
+        for (let j = i + 1; j < objects.length; j++) {
+            const o2 = objects[j];
 
-        const basePlaneCollision = obj.checkBasePlaneCollision(timestep);
+            const aabb2 = o2.getAABB();
 
-        if (basePlaneCollision) {
-            collisions.push(basePlaneCollision)
+            if (!aabbOverlap(aabb1, aabb2)) {
+                continue;
+            }
+
+            const c1 = o1.checkVertexFaceCollision(timestep, o2);
+            if (c1) {
+                collisions.push(c1);
+            }
+
+            const c2 = o2.checkVertexFaceCollision(timestep, o1);
+            if (c2) {
+                collisions.push(c2);
+            }
+
+            const edgeEdge = o1.checkEdgeEdgeCollision(timestep, o2);
+            if (edgeEdge) {
+                collisions.push(edgeEdge);
+            }
         }
+
+        // const basePlaneCollision = o1.checkBasePlaneCollision(timestep);
+        //
+        // if (basePlaneCollision) {
+        //     collisions.push(basePlaneCollision);
+        // }
     }
 
     let earliestCollisionTime = Number.MAX_VALUE;
@@ -220,45 +269,6 @@ function checkCollsion(timestep, objects) {
     }
 
     return earliestCollision;
-}
-
-function checkEdgeEdgeCollisions(timestep, objects) {
-    const collisions = [];
-
-    for (let i = 0; i < objects.length; i++) {
-        for (let j = i + 1; j < objects.length; j++) {
-            const o1 = objects[i];
-            const o2 = objects[j];
-
-            const col = o1.checkEdgeEdgeCollision(timestep, o2);
-
-            if (col) {
-                collisions.push(col);
-            }
-        }
-    }
-
-    return collisions;
-}
-
-function checkVertexFaceCollisions(timestep, objects) {
-    const collisions = [];
-
-    for (let i = 0; i < objects.length; i++) {
-        for (let j = i + 1; j < objects.length; j++) {
-            const c1 = objects[i].checkVertexFaceCollision(timestep, objects[j]);
-            if (c1) {
-                collisions.push(c1);
-            }
-
-            const c2 = objects[j].checkVertexFaceCollision(timestep, objects[i]);
-            if (c2) {
-                collisions.push(c2);
-            }
-        }
-    }
-
-    return collisions;
 }
 
 let frame = 0;
@@ -283,22 +293,82 @@ function simulate() {
             const collision = checkCollsion(timeSimulated, objectSimulators);
 
             if (collision) {
+                // simulating = false;
+                console.log(collision);
+
                 timeSimulated = collision.time;
 
                 objectSimulators.forEach(simulator => {
                     simulator.restoreState();
 
                     simulator.simulate(method, timeSimulated, objectSimulators);
-
-                    simulator.respondToCollision(collision);
                 });
-            }
 
-            // if (timeSimulated < timeRemaining) {
-            //     objectSimulators.forEach(simulator => {
-            //         simulator.simulate(method, timeRemaining, objectSimulators);
-            //     });
-            // }
+                if (collision.type === 'static-plane') {
+                    const {
+                        obj,
+                        r_a,
+                        normal,
+                    } = collision;
+
+                    const v_before = math.divide(obj.state.p, obj.mass);
+                    const v_normal_before = math.dot(v_before, normal);
+
+                    // TODO: optimize
+                    const inverseI0 = math.inv(obj.momentOfIntertia);
+                    const inverseI = math.multiply(math.multiply(obj.state.r, inverseI0), math.transpose(obj.state.r));
+
+                    const n = -(1 + obj.c_r) * v_normal_before;
+                    const d = 1 / obj.mass + math.dot(normal, math.cross(math.multiply(inverseI, math.cross(r_a, normal)), r_a));
+                    const j = n / d;
+
+                    const deltaP = math.multiply(3 * j, normal);
+                    const deltaL = math.multiply(3, math.cross(r_a, deltaP));
+
+                    obj.state.p = math.multiply(-obj.c_r, obj.state.p)
+                    obj.state.l = math.add(obj.state.l, deltaL);
+
+                } else {
+                    const {
+                        obj1,
+                        obj2,
+                        r_a,
+                        r_b,
+                        normal,
+                    } = collision;
+
+                    const v_before = math.subtract(math.divide(obj1.state.p, obj1.mass), math.divide(obj2.state.p, obj2.mass));
+                    const v_normal_before = math.dot(v_before, normal);
+
+                    const inverseIA0 = math.inv(obj1.momentOfIntertia);
+                    const inverseIA = math.multiply(math.multiply(obj1.state.r, inverseIA0), math.transpose(obj1.state.r));
+
+                    const inverseIB0 = math.inv(obj2.momentOfIntertia);
+                    const inverseIB = math.multiply(math.multiply(obj2.state.r, inverseIB0), math.transpose(obj2.state.r));
+
+                    const n = -(1 + obj1.c_r) * v_normal_before;
+                    const d = 1 / obj1.mass + 1 / obj2.mass +
+                            math.dot(normal,
+                                math.add(
+                                    math.cross(math.multiply(inverseIA, math.cross(r_a, normal)), r_a),
+                                    math.cross(math.multiply(inverseIB, math.cross(r_b, normal)), r_b)
+                                )
+                            );
+
+                    const j = n / d;
+
+                    const deltaP = math.multiply(1 * j, normal);
+                    const deltaL = math.multiply(1, math.cross(r_a, deltaP));
+
+                    const coeff = 3;
+
+                    obj1.state.p = math.add(obj1.state.p, math.multiply(coeff, deltaP));
+                    obj1.state.l = math.add(obj1.state.l, math.multiply(coeff, deltaL));
+
+                    obj2.state.p = math.add(obj2.state.p, math.multiply(-coeff, deltaP));
+                    obj2.state.l = math.add(obj2.state.l, math.multiply(-coeff, deltaL));
+                }
+            }
 
             timeRemaining -= timeSimulated;
         }
@@ -324,7 +394,15 @@ loadPreset1Btn.click(e => {
         scene.remove(m);
     });
 
-    loadObj('obj/box.obj', [0, 5, 0], [0, 0, 0], obj => {
+    loadObj('obj/box.obj',
+        [0, 7, 2],
+        [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ],
+        [0, 0, -0.02],
+        obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
@@ -337,7 +415,15 @@ loadPreset1Btn.click(e => {
         meshes.push(mesh);
     });
 
-    loadObj('obj/box.obj', [1, 7, 3], [0, 0, -0.05], obj => {
+    loadObj('obj/box.obj',
+        [1, 7, -3],
+        [
+            [0.866, 0.5, 0],
+            [-0.5, 0.866, 0],
+            [0, 0, 1],
+        ],
+        [0.01, 0, 0.03],
+        obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
