@@ -160,7 +160,6 @@ module.exports = class Simulator {
             return;
         }
 
-        // TODO: problem?
         this.lastState = this.state;
         this.lastGlobalVertexPos = this.globalVertexPos;
 
@@ -198,7 +197,6 @@ module.exports = class Simulator {
                     obj: this,
                     time: lastY / (lastY - newY) * timestep,
                     normal: [0, 1, 0],
-                    // TODO: using last state is not accurate
                     r_a: math.subtract(lastWorldPos, lastState.x),
                 };
             }
@@ -248,9 +246,6 @@ module.exports = class Simulator {
                 if (lastPosDot > 0 && newPosDot <= 0) {
                     var candidateCollisionTimeFraction = lastPosDot / (lastPosDot - newPosDot) * timestep;
 
-                    // var collisionPos = math.add(lastWorldPos, math.multiply(candidateCollisionTimeFraction, vertex.vel));
-
-                    // TODO:
                     var collisionPos = lastWorldPos;
 
                     if (pointInTriangle(collisionPos, lastV1WorldPos, lastV2WorldPos, lastV3WorldPos)) {

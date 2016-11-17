@@ -189,6 +189,7 @@ initCamera();
 initLight();
 
 var simulating = false;
+var basePlaneCollisionOn = false;
 
 function aabbOverlap(aabb1, aabb2) {
     if (aabb1.maxX < aabb2.minX) {
@@ -251,11 +252,13 @@ function checkCollsion(timestep, objects) {
             }
         }
 
-        // var basePlaneCollision = o1.checkBasePlaneCollision(timestep);
-        //
-        // if (basePlaneCollision) {
-        //     collisions.push(basePlaneCollision);
-        // }
+        if (basePlaneCollisionOn) {
+            var basePlaneCollision = o1.checkBasePlaneCollision(timestep);
+
+            if (basePlaneCollision) {
+                collisions.push(basePlaneCollision);
+            }
+        }
     }
 
     var earliestCollisionTime = Number.MAX_VALUE;
@@ -284,7 +287,6 @@ function simulate() {
         var iter = 0;
 
         while (timeRemaining > (0.01 * stepSize) && iter < 10) {
-            // console.log(iter);
             iter++;
 
             var timeSimulated = timeRemaining;
@@ -296,9 +298,6 @@ function simulate() {
             var collision = checkCollsion(timeSimulated, objectSimulators);
 
             if (collision) {
-                // simulating = false;
-                console.log(collision);
-
                 timeSimulated = collision.time;
 
                 objectSimulators.forEach(simulator => {
@@ -314,7 +313,6 @@ function simulate() {
                         normal,
                     } = collision;
 
-                    // TODO: optimize
                     var inverseI0 = math.inv(obj.momentOfIntertia);
                     var inverseI = math.multiply(math.multiply(obj.state.r, inverseI0), math.transpose(obj.state.r));
 
@@ -332,7 +330,7 @@ function simulate() {
                     var deltaL = math.multiply(1, math.cross(r_a, deltaP));
 
                     obj.state.p = math.multiply(-obj.c_r, obj.state.p)
-                    obj.state.l = math.add(obj.state.l, deltaL);
+                    obj.state.l = math.multiply(0.9, math.add(obj.state.l, deltaL));
 
                 } else {
                     var {
@@ -411,7 +409,7 @@ loadPreset1Btn.click(e => {
     });
 
     loadObj('obj/hammer.obj',
-        [0, 3, 2],
+        [0, 7, 2],
         [
             [1, 0, 0],
             [0, 1, 0],
@@ -425,7 +423,6 @@ loadPreset1Btn.click(e => {
 
         var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
             color: 'red',
-            // wireframe: true,
         }));
 
         scene.add(mesh);
@@ -440,6 +437,8 @@ loadPreset2Btn.click(e => {
         scene.remove(m);
     });
 
+    coeff = 1;
+
     loadObj('obj/box.obj',
         [0, 7, 2],
         [
@@ -448,14 +447,17 @@ loadPreset2Btn.click(e => {
             [0, 0, 1],
         ],
         [0, 0, -1.0],
-        [1, 1, -1],
+        [
+            -0.4,
+            0.2,
+            0.1,
+        ],
         obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
         var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
             color: 'red',
-            // wireframe: true,
         }));
 
         scene.add(mesh);
@@ -470,14 +472,17 @@ loadPreset2Btn.click(e => {
             [0, 0, 1],
         ],
         [0.01, 0, 0.8],
-        [1, 1, -1],
+        [
+            0,
+            -0.3,
+            0.2,
+        ],
         obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
 
         var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
             color: 'blue',
-            // wireframe: true,
         }));
 
         scene.add(mesh);
@@ -485,32 +490,90 @@ loadPreset2Btn.click(e => {
     });
 });
 
-// var planeGeometry = new THREE.PlaneGeometry(100, 100);
-//
-// var plane = new THREE.Mesh(planeGeometry, new THREE.MeshPhongMaterial({
-//     color: '#cccccc',
-//     // transparent: true,
-//     // opacity: 0.3,
-//     side: THREE.DoubleSide,
-// }));
-// plane.rotation.x = -Math.PI / 2;
-//
-// scene.add(plane);
-
-var loadPreset2Btn = $('#load-preset-2-btn');
-loadPreset2Btn.click(e => {
-});
-
 var loadPreset3Btn = $('#load-preset-3-btn');
 loadPreset3Btn.click(e => {
+    objectSimulators = [];
+    meshes.forEach(m => {
+        scene.remove(m);
+    });
+
+    coeff = 1;
+
+    loadObj('obj/hammer.obj',
+        [0, 7, 2],
+        [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ],
+        [0, 0, -1.0],
+        [
+            0.1,
+            -0.3,
+            0.5,
+        ],
+        obj => {
+        objectSimulators.push(obj);
+        obj.geometry.computeFaceNormals();
+
+        var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
+            color: 'red',
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
+
+    loadObj('obj/box.obj',
+        [1, 7, -3],
+        [
+            [0.866, 0.5, 0],
+            [-0.5, 0.866, 0],
+            [0, 0, 1],
+        ],
+        [0.01, 0, 0.8],
+        [
+            -0.1,
+            0.4,
+            -0.3,
+        ],
+        obj => {
+        objectSimulators.push(obj);
+        obj.geometry.computeFaceNormals();
+
+        var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
+            color: 'blue',
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
 });
 
-var stepSizeSlider = $('#step-size-slider');
-stepSizeSlider.change(e => {
-    stepSize = stepSizeSlider.val();
+var basePlaneCheckbox = $('#base-plane-checkbox');
+basePlaneCheckbox.change(e => {
+    basePlaneCollisionOn = basePlaneCheckbox.is(':checked');
+
+    if (basePlaneCollisionOn) {
+        scene.add(plane);
+    } else {
+        scene.remove(plane);
+    }
 });
 
 var methodSelect = $('#method-select');
 methodSelect.change(e => {
     method = methodSelect.val();
 });
+
+var planeGeometry = new THREE.PlaneGeometry(30, 30);
+
+var plane = new THREE.Mesh(planeGeometry, new THREE.MeshPhongMaterial({
+    color: '#cccccc',
+    transparent: true,
+    opacity: 0.3,
+    side: THREE.DoubleSide,
+}));
+plane.rotation.x = -Math.PI / 2;
+
+// scene.add(plane);
