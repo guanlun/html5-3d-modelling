@@ -9,8 +9,14 @@ module.exports = class ObjectState {
             [0, 0, 1],
         ]);
 
-        const coeff = 0.2;
+        this.l = [0, 0, 0];
 
-        this.l = [Math.random() * coeff, Math.random() * coeff, Math.random() * coeff];
+        // const coeff = 1;
+
+        // this.l = [
+        //     (Math.random() - 0.5) * coeff,
+        //     (Math.random() - 0.5) * coeff,
+        //     (Math.random() - 0.5) * coeff
+        // ];
     }
 }

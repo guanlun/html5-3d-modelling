@@ -135,6 +135,10 @@ module.exports = class Simulator {
 
         var yVel = state.p[1] / this.mass;
 
+        // if (Math.abs(yVel) < 0.01) {
+        //     console.log(yVel);
+        // }
+
         dState.l = [0, 0, 0];
 
         return dState;
@@ -584,12 +588,13 @@ module.exports = class Simulator {
         this.geometry.verticesNeedUpdate = true;
     }
 
-    createGeometry(initPos, initRotation, initVel) {
+    createGeometry(initPos, initRotation, initVel, initAngularVel) {
         var initialState = new ObjectState();
 
-        initialState.p = math.multiply(this.mass, initVel);
         initialState.x = math.add(initialState.x, initPos);
+        initialState.p = math.multiply(this.mass, initVel);
         initialState.r = math.matrix(initRotation);
+        initialState.l = math.multiply(this.momentOfIntertia, initAngularVel);
 
         this.updateState(initialState);
 

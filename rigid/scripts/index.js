@@ -45,7 +45,7 @@ var objectSimulators = [];
 var method = 'Euler';
 var stepSize = 0.01;
 
-function loadObj(filename, initPos, initRotation, initVel, callback) {
+function loadObj(filename, initPos, initRotation, initVel, initAngularVel, callback) {
     var simulator = new Simulator();
 
     $.get(filename, objData => {
@@ -92,7 +92,7 @@ function loadObj(filename, initPos, initRotation, initVel, callback) {
         simulator.computeCenterOfMass();
         simulator.recenter();
         simulator.computeMomentOfInertia();
-        simulator.createGeometry(initPos, initRotation, initVel);
+        simulator.createGeometry(initPos, initRotation, initVel, initAngularVel);
 
         callback(simulator);
     });
@@ -251,11 +251,11 @@ function checkCollsion(timestep, objects) {
             }
         }
 
-        var basePlaneCollision = o1.checkBasePlaneCollision(timestep);
-
-        if (basePlaneCollision) {
-            collisions.push(basePlaneCollision);
-        }
+        // var basePlaneCollision = o1.checkBasePlaneCollision(timestep);
+        //
+        // if (basePlaneCollision) {
+        //     collisions.push(basePlaneCollision);
+        // }
     }
 
     var earliestCollisionTime = Number.MAX_VALUE;
@@ -297,7 +297,7 @@ function simulate() {
 
             if (collision) {
                 // simulating = false;
-                // console.log(collision);
+                console.log(collision);
 
                 timeSimulated = collision.time;
 
@@ -322,9 +322,6 @@ function simulate() {
 
                     var v = math.divide(obj.state.p, obj.mass);
                     var pDerivative = math.add(v, math.cross(w, r_a));
-                    // console.log(frame, stepSize, obj.state.p, w, r_a, pDerivative);
-
-                    // var v_before = math.divide(obj.state.p, obj.mass);
                     var v_normal_before = math.dot(pDerivative, normal);
 
                     var n = -(1 + obj.c_r) * v_normal_before;
@@ -346,14 +343,22 @@ function simulate() {
                         normal,
                     } = collision;
 
-                    var v_before = math.subtract(math.divide(obj1.state.p, obj1.mass), math.divide(obj2.state.p, obj2.mass));
-                    var v_normal_before = math.dot(v_before, normal);
-
                     var inverseIA0 = math.inv(obj1.momentOfIntertia);
                     var inverseIA = math.multiply(math.multiply(obj1.state.r, inverseIA0), math.transpose(obj1.state.r));
 
                     var inverseIB0 = math.inv(obj2.momentOfIntertia);
                     var inverseIB = math.multiply(math.multiply(obj2.state.r, inverseIB0), math.transpose(obj2.state.r));
+
+                    var wA = math.multiply(inverseIA, obj1.state.l)._data;
+                    var vA = math.divide(obj1.state.p, obj1.mass);
+                    var pADerivative = math.add(vA, math.cross(wA, r_a));
+
+                    var wB = math.multiply(inverseIB, obj2.state.l)._data;
+                    var vB = math.divide(obj2.state.p, obj2.mass);
+                    var pBDerivative = math.add(vB, math.cross(wB, r_a));
+
+                    var v_before = math.subtract(pADerivative, pBDerivative);
+                    var v_normal_before = math.dot(v_before, normal);
 
                     var n = -(1 + obj1.c_r) * v_normal_before;
                     var d = 1 / obj1.mass + 1 / obj2.mass +
@@ -371,9 +376,7 @@ function simulate() {
                     var deltaP2 = math.multiply(-1 * j, normal);
                     var deltaL2 = math.multiply(-1 * j, math.cross(r_b, normal))
 
-                    var coeff = 3;
-
-                    // console.log(deltaL1, deltaL2);
+                    var coeff = 2;
 
                     obj1.state.p = math.add(obj1.state.p, math.multiply(coeff, deltaP1));
                     obj1.state.l = math.add(obj1.state.l, math.multiply(coeff, deltaL1));
@@ -407,6 +410,36 @@ loadPreset1Btn.click(e => {
         scene.remove(m);
     });
 
+    loadObj('obj/hammer.obj',
+        [0, 3, 2],
+        [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ],
+        [0, 0, -1.0],
+        [2, 2, -3],
+        obj => {
+        objectSimulators.push(obj);
+        obj.geometry.computeFaceNormals();
+
+        var mesh = new THREE.Mesh(obj.geometry, new THREE.MeshPhongMaterial({
+            color: 'red',
+            // wireframe: true,
+        }));
+
+        scene.add(mesh);
+        meshes.push(mesh);
+    });
+});
+
+var loadPreset2Btn = $('#load-preset-2-btn');
+loadPreset2Btn.click(e => {
+    objectSimulators = [];
+    meshes.forEach(m => {
+        scene.remove(m);
+    });
+
     loadObj('obj/box.obj',
         [0, 7, 2],
         [
@@ -415,6 +448,7 @@ loadPreset1Btn.click(e => {
             [0, 0, 1],
         ],
         [0, 0, -1.0],
+        [1, 1, -1],
         obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
@@ -436,6 +470,7 @@ loadPreset1Btn.click(e => {
             [0, 0, 1],
         ],
         [0.01, 0, 0.8],
+        [1, 1, -1],
         obj => {
         objectSimulators.push(obj);
         obj.geometry.computeFaceNormals();
@@ -450,17 +485,17 @@ loadPreset1Btn.click(e => {
     });
 });
 
-var planeGeometry = new THREE.PlaneGeometry(100, 100);
-
-var plane = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({
-    color: 'blue',
-    transparent: true,
-    opacity: 0.3,
-    side: THREE.DoubleSide,
-}));
-plane.rotation.x = -Math.PI / 2;
-
-scene.add(plane);
+// var planeGeometry = new THREE.PlaneGeometry(100, 100);
+//
+// var plane = new THREE.Mesh(planeGeometry, new THREE.MeshPhongMaterial({
+//     color: '#cccccc',
+//     // transparent: true,
+//     // opacity: 0.3,
+//     side: THREE.DoubleSide,
+// }));
+// plane.rotation.x = -Math.PI / 2;
+//
+// scene.add(plane);
 
 var loadPreset2Btn = $('#load-preset-2-btn');
 loadPreset2Btn.click(e => {
